@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Denomination — Count & Tally</title>
+    <link rel="stylesheet" href="../assets/css/banking-theme.css">
+    <style>
+        body { padding: 0 16px 20px; margin: 0; background: var(--bg-app); min-height: 100vh; }
+
+        .cd-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+        .cd-side { position: sticky; top: 12px; }
+        @media (max-width: 920px) { .cd-layout { grid-template-columns: 1fr; } .cd-side { position: static; } }
+
+        /* Denomination table */
+        .cd-table td, .cd-table th { padding: 7px 14px; }
+        .cd-table tr.cd-group td { background: var(--bg-subtle) !important; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-secondary); border-bottom: 1px solid var(--border-default); }
+        .cd-table tr.cd-group td.num { color: var(--bank-navy); font-size: 0.8rem; letter-spacing: 0; }
+        .cd-denom { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1rem; color: var(--bank-navy); }
+        .cd-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(15, 23, 42, 0.25); flex: none; }
+        .cd-count { width: 130px; text-align: right; font-weight: 700; font-size: 1rem; font-variant-numeric: tabular-nums; padding: 6px 10px; }
+        .cd-count.invalid { border-color: var(--status-danger); background: var(--status-danger-bg); }
+        .cd-amt { font-weight: 700; font-variant-numeric: tabular-nums; }
+        .cd-amt.zero { color: var(--border-default); font-weight: 500; }
+        .cd-table tfoot td { background: #F1F5F9; font-weight: 800; border-top: 2px solid var(--bank-navy); font-size: 0.95rem; }
+
+        /* Tally */
+        .cd-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px dashed var(--border-subtle); font-size: 0.9rem; }
+        .cd-row:last-child { border-bottom: 0; }
+        .cd-row b { font-variant-numeric: tabular-nums; }
+        .cd-status { margin-top: 14px; border-radius: var(--radius-sm); padding: 12px 14px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; gap: 10px; border: 1px solid var(--status-info-border); background: var(--status-info-bg); color: var(--status-info); }
+        .cd-status.ok   { border-color: var(--status-success-border); background: var(--status-success-bg); color: var(--status-success); }
+        .cd-status.over { border-color: var(--status-warning-border); background: var(--status-warning-bg); color: var(--status-warning); }
+        .cd-status.short{ border-color: var(--status-danger-border);  background: var(--status-danger-bg);  color: var(--status-danger); }
+        .cd-status .amt { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+
+        @media print {
+            @page { size: A4 portrait; margin: 12mm 15mm; }
+            body { background: #fff !important; padding: 0 !important; color: #000 !important; font-size: 10pt !important; }
+            .no-print, .btn { display: none !important; }
+            .cd-layout { display: block !important; }
+            .cd-side { position: static; }
+            .bank-card { border: 1.5px solid #000 !important; box-shadow: none !important; background: #fff !important; padding: 10px 12px !important; margin-bottom: 12px !important; }
+            .cd-table th { background: #EAEAEA !important; color: #000 !important; border: 1px solid #000 !important; }
+            .cd-table td { border: 1px solid #555 !important; color: #000 !important; padding: 5px 10px !important; }
+            .cd-table tr.cd-group td, .cd-table tfoot td { background: #EAEAEA !important; color: #000 !important; }
+            .cd-count { border: 0 !important; background: transparent !important; box-shadow: none !important; width: 100% !important; padding: 0 !important; color: #000 !important; }
+            .cd-dot { display: none; }
+            .cd-status { background: #fff !important; color: #000 !important; border: 1.5px solid #000 !important; }
+            .cd-row .form-control { border: 0 !important; background: transparent !important; padding: 0 !important; text-align: right; width: auto !important; font-weight: 800; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container" style="max-width: 1180px;">
+
+    <div class="print-only-header">
+        <h2>CASH DENOMINATION STATEMENT</h2>
+        <p>Physical cash count by note &amp; coin, tallied with cash book</p>
+    </div>
+
+    <div class="cd-layout">
+
+        <!-- LEFT: count sheet -->
+        <div class="bank-card">
+            <div class="card-title">
+                <span>💵 Cash Count</span>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <span class="badge badge-navy" id="piecesBadge">0 pcs</span>
+                    <button class="btn btn-outline btn-sm no-print" onclick="resetSheet()" title="Clear all counts">↺ Reset</button>
+                    <button class="btn btn-outline btn-sm no-print" onclick="window.print()">🖨️ Print</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="bank-table cd-table">
+                    <thead>
+                        <tr>
+                            <th>Denomination</th>
+                            <th class="num">Count / Value</th>
+                            <th class="num">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sheetBody"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Grand Total</td>
+                            <td class="num" id="grandPieces">0</td>
+                            <td class="num" id="grandAmount">₹ 0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- RIGHT: total + tally -->
+        <div class="cd-side">
+            <div class="bank-card">
+                <div class="card-title"><span>⚖️ Tally with Cash Book</span></div>
+                <div class="form-group">
+                    <label class="form-label" for="bookInput">Cash Book Balance (₹)</label>
+                    <input type="text" id="bookInput" class="form-control" inputmode="decimal" placeholder="Enter closing balance as per cash book" autocomplete="off" style="font-size:1.1rem; font-weight:700; color:var(--bank-navy);">
+                </div>
+                <div class="cd-row"><span>Physical cash</span><b id="tallyPhysical">₹ 0.00</b></div>
+                <div class="cd-row"><span>Cash book</span><b id="tallyBook">₹ 0.00</b></div>
+                <div class="cd-status" id="tallyStatus"><span>Enter book balance to check</span><span class="amt"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="print-signatures-block" style="margin-top: 36px;">
+        <div class="print-sig-col"><div class="print-sig-line"></div><div class="print-sig-title">Cashier</div><div class="print-sig-sub">Cash Counted By</div></div>
+        <div class="print-sig-col"><div class="print-sig-line"></div><div class="print-sig-title">Passing Officer</div><div class="print-sig-sub">Checker</div></div>
+        <div class="print-sig-col"><div class="print-sig-line"></div><div class="print-sig-title">Branch Manager</div><div class="print-sig-sub">Verified By</div></div>
+    </div>
+</div>
+
+<script src="../assets/js/banking-core.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    // To add or remove a denomination, edit this list only (e.g. add { v: 2000, type: 'note', color: '#C026D3' }).
+    const DENOMS = [
+        { v: 500, type: 'note', color: '#A8A89B' },
+        { v: 200, type: 'note', color: '#F5C518' },
+        { v: 100, type: 'note', color: '#B9A6E0' },
+        { v: 50,  type: 'note', color: '#38BDF8' },
+        { v: 20,  type: 'note', color: '#B6D94C' },
+        { v: 10,  type: 'note', color: '#8B5E3C' },
+        { v: 1,   type: 'coin', color: '#CBD5E1' }   // single "Coins" row: enter the total coin value in rupees
+    ];
+    const STORE_KEY = 'cashDenomination.v1';
+    const MAX_COUNT = 99999999;
+
+    const $ = id => document.getElementById(id);
+    const inr0 = n => BankingCore.formatINR(n, { decimals: 0 });
+    const inr2 = n => BankingCore.formatINR(n, { decimals: 2 });
+    const todayISO = () => {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    };
+
+    // Accepts "245", "100+100+45", "3*100+45" (x or × also work for multiply). Returns null if invalid.
+    function parseCount(text) {
+        const t = String(text || '').replace(/[,\s]/g, '').replace(/[x×]/gi, '*');
+        if (t === '') return 0;
+        if (!/^\d+(\*\d+)?(\+\d+(\*\d+)?)*$/.test(t)) return null;
+        let sum = 0;
+        for (const part of t.split('+')) sum += part.split('*').reduce((p, n) => p * Number(n), 1);
+        return sum > MAX_COUNT ? null : sum;
+    }
+
+    // ---------- Build sheet ----------
+    const body = $('sheetBody');
+    const inputs = [];          // count inputs in row order
+    const amtCells = [];        // amount cells in the same order
+    const groupCells = {};      // subtotal cells per group
+
+    const notes = DENOMS.filter(d => d.type === 'note');
+    const coin = DENOMS.find(d => d.type === 'coin');
+
+    function addRow(d, isCoin) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><span class="cd-denom"><span class="cd-dot" style="background:${d.color}"></span>${isCoin ? 'Coins <small style="font-weight:600;color:var(--text-muted)">(total ₹ value)</small>' : '₹ ' + d.v}</span></td>
+            <td class="num"><input type="text" class="form-control cd-count" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="${isCoin ? 'Total coins value in rupees' : 'Note count for ' + d.v + ' rupees'}"></td>
+            <td class="num cd-amt zero">₹ 0</td>`;
+        body.appendChild(row);
+        const input = row.querySelector('input');
+        input._denom = d;
+        inputs.push(input);
+        amtCells.push(row.querySelector('.cd-amt'));
+    }
+
+    const gr = document.createElement('tr');
+    gr.className = 'cd-group';
+    gr.innerHTML = '<td>Notes</td><td class="num" id="gp-note">0</td><td class="num" id="ga-note">₹ 0</td>';
+    body.appendChild(gr);
+    notes.forEach(d => addRow(d, false));
+    addRow(coin, true);
+
+    // ---------- Calculate ----------
+    function recalc() {
+        let pieces = 0, total = 0;
+        const sub = { note: { p: 0, a: 0 }, coin: { p: 0, a: 0 } };
+
+        inputs.forEach((inp, i) => {
+            const n = parseCount(inp.value);
+            inp.classList.toggle('invalid', n === null);
+            const count = n || 0;
+            const amount = count * inp._denom.v;
+            amtCells[i].textContent = inr0(amount);
+            amtCells[i].classList.toggle('zero', amount === 0);
+            sub[inp._denom.type].p += count;
+            sub[inp._denom.type].a += amount;
+            if (inp._denom.type === 'note') pieces += count;
+            total += amount;
+        });
+
+        $('gp-note').textContent = sub.note.p.toLocaleString('en-IN') + ' pcs';
+        $('ga-note').textContent = inr0(sub.note.a);
+
+        $('grandPieces').textContent = pieces.toLocaleString('en-IN');
+        $('grandAmount').textContent = inr0(total);
+        $('piecesBadge').textContent = pieces.toLocaleString('en-IN') + ' pcs';
+
+        updateTally(total);
+        save();
+    }
+
+    function updateTally(physical) {
+        const raw = $('bookInput').value.trim();
+        const box = $('tallyStatus');
+        const label = box.children[0], amt = box.children[1];
+        $('tallyPhysical').textContent = inr2(physical);
+
+        if (raw === '') {
+            $('tallyBook').textContent = '—';
+            box.className = 'cd-status';
+            label.textContent = 'Enter book balance to check';
+            amt.textContent = '';
+            return;
+        }
+        const book = BankingCore.parseAmount(raw);
+        $('tallyBook').textContent = inr2(book);
+
+        // compare in paise to avoid floating point noise
+        const diff = (Math.round(physical * 100) - Math.round(book * 100)) / 100;
+        if (diff === 0) {
+            box.className = 'cd-status ok';
+            label.textContent = '✅ Cash is tallied';
+            amt.textContent = '';
+        } else if (diff > 0) {
+            box.className = 'cd-status over';
+            label.textContent = '⚠️ Excess cash';
+            amt.textContent = inr2(diff);
+        } else {
+            box.className = 'cd-status short';
+            label.textContent = '❌ Cash short';
+            amt.textContent = inr2(Math.abs(diff));
+        }
+    }
+
+    // ---------- Autosave (same day only, so yesterday's count never shows up by mistake) ----------
+    function save() {
+        try {
+            localStorage.setItem(STORE_KEY, JSON.stringify({
+                day: todayISO(),
+                counts: inputs.map(i => i.value),
+                book: $('bookInput').value
+            }));
+        } catch (e) { /* storage unavailable - app still works */ }
+    }
+
+    function load() {
+        let s = null;
+        try { s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) {}
+        if (!s) return;
+        if (s.day === todayISO()) {
+            (s.counts || []).forEach((v, i) => { if (inputs[i]) inputs[i].value = v; });
+            $('bookInput').value = s.book || '';
+        }
+    }
+
+    // ---------- Events ----------
+    inputs.forEach((inp, i) => {
+        inp.addEventListener('input', recalc);
+        inp.addEventListener('focus', () => inp.select());
+        inp.addEventListener('blur', () => {              // collapse "100+45" into 145
+            const n = parseCount(inp.value);
+            if (n !== null) { inp.value = n === 0 ? '' : String(n); recalc(); }
+        });
+        inp.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                (inputs[i + 1] || $('bookInput')).focus();
+            } else if (e.key === 'ArrowUp' && i > 0) {
+                e.preventDefault();
+                inputs[i - 1].focus();
+            }
+        });
+    });
+
+    $('bookInput').addEventListener('input', recalc);
+    $('bookInput').addEventListener('focus', e => e.target.select());
+    $('bookInput').addEventListener('blur', e => {
+        const raw = e.target.value.trim();
+        if (raw === '') return;
+        const v = BankingCore.parseAmount(raw);
+        e.target.value = BankingCore.formatINR(v, { showSymbol: false, decimals: Number.isInteger(v) ? 0 : 2 });
+        recalc();
+    });
+    $('bookInput').addEventListener('keydown', e => {
+        if (e.key === 'ArrowUp') { e.preventDefault(); inputs[inputs.length - 1].focus(); }
+    });
+
+    window.resetSheet = function () {
+        const hasData = inputs.some(i => i.value) || $('bookInput').value;
+        if (hasData && !confirm('Clear all counts and the book balance?')) return;
+        inputs.forEach(i => { i.value = ''; });
+        $('bookInput').value = '';
+        recalc();
+        inputs[0].focus();
+    };
+
+    load();
+    recalc();
+    inputs[0].focus();
+})();
+</script>
+</body>
+</html>
