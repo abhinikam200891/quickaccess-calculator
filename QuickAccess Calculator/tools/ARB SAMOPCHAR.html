@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARB Samopchar (D1) Settlement Calculator</title>
+    <link rel="stylesheet" href="../assets/css/banking-theme.css">
+    <script src="../assets/js/banking-core.js"></script>
+    <style>
+        body {
+            padding: 0 16px 16px;
+            margin: 0;
+            background: var(--bg-app);
+            min-height: 100vh;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+        }
+
+        .arb-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        /* Left Side Panel: Customer & Dates */
+        .side-panel {
+            flex: 0 0 290px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #ffffff;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #f1f5f9;
+            margin-bottom: 2px;
+        }
+
+        .panel-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--bank-navy);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section-label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 5px 0 2px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin-bottom: 4px;
+        }
+
+        .field-label {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .field-input {
+            height: 30px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 5px;
+            padding: 0 8px;
+            box-sizing: border-box;
+            width: 100%;
+            outline: none;
+            transition: all 0.15s ease;
+        }
+
+        .field-input:focus {
+            border-color: var(--bank-blue);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+        }
+
+        .field-input.readonly {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            color: var(--bank-navy);
+            font-weight: 700;
+            pointer-events: none;
+        }
+
+        .days-badge-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin-top: 3px;
+        }
+
+        .days-badge-label {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #166534;
+        }
+
+        .days-badge-val {
+            font-size: 0.98rem;
+            font-weight: 800;
+            color: #15803d;
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+        }
+
+        /* Settlement Concession Summary Box (Clean, No Save badge) */
+        .concession-box {
+            background: linear-gradient(145deg, #0f2c58 0%, #1e3a8a 100%);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #ffffff;
+            margin-top: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .concession-header {
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--bank-gold);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            padding-bottom: 4px;
+        }
+
+        .concession-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.76rem;
+            padding: 2px 0;
+        }
+
+        .concession-row span {
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+
+        .concession-row strong {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            font-size: 0.86rem;
+            color: #ffffff;
+        }
+
+        .concession-row.tier-1 strong { color: #93c5fd; }
+        .concession-row.tier-2 strong { color: #fde047; }
+        .concession-row.tier-3 strong { color: #86efac; }
+
+        .side-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .btn-side {
+            flex: 1;
+            height: 30px;
+            padding: 0 8px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            border-radius: 4px;
+        }
+
+        /* Right Calculation Matrix Area */
+        .calc-area {
+            flex: 1;
+            min-width: 0;
+            background: #ffffff;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+
+        .calc-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: #ffffff;
+        }
+
+        .calc-title {
+            font-size: 0.84rem;
+            font-weight: 800;
+            color: var(--bank-navy);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Cost of Process Pill - Roomy & Centered */
+        .cost-process-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #334155;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 3px 10px;
+        }
+
+        .cost-process-input {
+            width: 64px;
+            height: 25px;
+            font-size: 0.84rem;
+            font-weight: 800;
+            text-align: center;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 0 4px;
+            color: var(--bank-navy);
+            background: #ffffff;
+            outline: none;
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            box-sizing: border-box;
+        }
+
+        .cost-process-input:focus {
+            border-color: var(--bank-blue);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+        }
+
+        .cost-process-input::-webkit-inner-spin-button,
+        .cost-process-input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .cost-process-input {
+            -moz-appearance: textfield;
+        }
+
+        /* Matrix Table - Roomy, Clear, and Readable */
+        .table-wrap {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        th, td {
+            padding: 6px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #f1f5f9;
+            font-size: 0.84rem;
+            vertical-align: middle;
+            text-align: right;
+            height: 33px;
+            box-sizing: border-box;
+        }
+
+        th:first-child, td:first-child {
+            width: 44%;
+            text-align: left;
+            font-weight: 700;
+            color: #334155;
+            padding-left: 14px;
+        }
+
+        th:last-child, td:last-child {
+            border-right: none;
+        }
+
+        /* Table Headers - Pure Percentage Only (No "Tier 1", "Tier 2", "Tier 3") */
+        thead th {
+            padding: 6px 10px;
+            font-size: 0.84rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            background: #f8fafc;
+            border-bottom: 2px solid #cbd5e1;
+            height: 38px;
+        }
+
+        .rate-col-header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+
+        .rate-input-wrap {
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .rate-box-input {
+            width: 64px;
+            height: 26px;
+            font-size: 0.86rem;
+            font-weight: 800;
+            text-align: right;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 0 18px 0 6px;
+            background: #ffffff;
+            color: inherit;
+            outline: none;
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            box-sizing: border-box;
+        }
+
+        .rate-box-input:focus {
+            border-color: var(--bank-blue);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+        }
+
+        .rate-box-input::-webkit-inner-spin-button,
+        .rate-box-input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .rate-box-input {
+            -moz-appearance: textfield;
+        }
+
+        .rate-input-wrap::after {
+            content: "%";
+            position: absolute;
+            right: 6px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        /* Rate Header Accents */
+        .rate-header-1 { background: #eff6ff !important; color: #1e40af; border-top: 3px solid #3b82f6; }
+        .rate-header-2 { background: #fefce8 !important; color: #854d0e; border-top: 3px solid #eab308; }
+        .rate-header-3 { background: #faf5ff !important; color: #6b21a8; border-top: 3px solid #a855f7; }
+
+        /* Formula Description in Label */
+        .calc-desc {
+            display: block;
+            font-size: 0.7rem;
+            color: #64748b;
+            font-weight: 500;
+            font-style: normal;
+            line-height: 1.2;
+            margin-top: 1px;
+        }
+
+        /* Input Controls inside table */
+        .matrix-input {
+            width: 100%;
+            height: 26px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--bank-navy);
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 0 8px;
+            text-align: right;
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            box-sizing: border-box;
+            outline: none;
+            transition: all 0.12s ease;
+        }
+
+        .matrix-input:focus {
+            border-color: var(--bank-blue);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+            background: #f8fafc;
+        }
+
+        /* Calculated Output Cells */
+        .matrix-output {
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: #1e293b;
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            display: inline-block;
+            width: 100%;
+            text-align: right;
+        }
+
+        /* Row Styles */
+        .input-row {
+            background: #ffffff;
+        }
+        .input-row:hover {
+            background: #fbfcfe;
+        }
+
+        .subtotal-row {
+            background: #f8fafc;
+            border-top: 1px solid #cbd5e1;
+            border-bottom: 1px solid #cbd5e1;
+        }
+        .subtotal-row td:first-child {
+            color: var(--bank-navy);
+            font-weight: 800;
+        }
+        .subtotal-row .matrix-output {
+            font-weight: 800;
+            color: var(--bank-navy);
+        }
+
+        .receivable-row {
+            background: #f0f7ff;
+            border-top: 1.5px solid #bfdbfe;
+            border-bottom: 1.5px solid #bfdbfe;
+        }
+        .receivable-row td:first-child {
+            color: #1e40af;
+            font-weight: 800;
+        }
+        .receivable-row .matrix-output {
+            font-weight: 800;
+            color: #1d4ed8;
+        }
+
+        .calc-amt-row {
+            background: #fdf4ff;
+            border-top: 1.5px solid #f5d0fe;
+            border-bottom: 1.5px solid #f5d0fe;
+        }
+        .calc-amt-row td:first-child {
+            color: #86198f;
+            font-weight: 800;
+        }
+        .calc-amt-row .matrix-output {
+            font-weight: 800;
+            color: #a21caf;
+        }
+
+        /* Final Total Row */
+        .final-row {
+            background: #0f2c58 !important;
+            color: #ffffff !important;
+            border-top: 2px solid var(--bank-gold);
+            height: 42px;
+        }
+
+        .final-row td:first-child {
+            color: #ffffff !important;
+            font-weight: 800;
+            font-size: 0.88rem;
+        }
+        .final-row td:first-child .calc-desc {
+            color: #94a3b8;
+        }
+
+        .final-row td {
+            border-right: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .final-val {
+            font-size: 1rem !important;
+            font-weight: 800 !important;
+            color: #ffffff !important;
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            display: inline-block;
+            width: 100%;
+            text-align: right;
+        }
+
+        .final-row td:nth-child(2) .final-val { color: #93c5fd !important; }
+        .final-row td:nth-child(3) .final-val { color: #fde047 !important; }
+        .final-row td:nth-child(4) .final-val { color: #86efac !important; }
+
+        /* Hide WebKit spin arrows in table */
+        tbody input[type=number]::-webkit-inner-spin-button,
+        tbody input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        tbody input[type=number] { -moz-appearance: textfield; }
+
+        /* Responsive Layout for Laptops, DPI scaling & Restored Windows */
+        @media (max-width: 1080px) {
+            .arb-container {
+                flex-direction: column;
+            }
+            .side-panel {
+                width: 100%;
+                flex: none;
+            }
+        }
+
+        /* =================================================================
+           PRINT STYLES - GUARANTEED EXACT SINGLE A4 PORTRAIT PAGE
+           100% BLACK & WHITE / GRAYSCALE - CLEAR, SHARP, ZERO OVERFLOW
+           ================================================================= */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 8mm 10mm 8mm 10mm;
+            }
+
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                color: #000000 !important;
+                font-size: 9.5pt !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .no-print, .side-actions, .cost-process-pill, .btn-side {
+                display: none !important;
+            }
+
+            .arb-container {
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* Hide interactive side panel on print to give 100% room to table */
+            .side-panel {
+                display: none !important;
+            }
+
+            /* Show compact Print Header in crisp B&W */
+            .print-only-header {
+                display: block !important;
+                border-bottom: 2px solid #000000 !important;
+                padding-bottom: 4px;
+                margin-bottom: 6px;
+                text-align: center;
+            }
+
+            .print-only-header h2 {
+                margin: 0;
+                font-size: 12.5pt;
+                color: #000000 !important;
+                font-weight: 850;
+                letter-spacing: 0.03em;
+            }
+
+            .print-only-header p {
+                margin: 2px 0 0;
+                font-size: 8.5pt;
+                color: #333333 !important;
+            }
+
+            /* Print Borrower & Dates Meta Card - Generous, Structured, Zero Wrapping */
+            .print-meta-card {
+                display: block !important;
+                border: 1.5px solid #000000 !important;
+                border-radius: 4px !important;
+                margin-bottom: 10px !important;
+                background: #ffffff !important;
+                page-break-inside: avoid !important;
+                overflow: hidden !important;
+            }
+
+            .print-meta-header {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                background: #000000 !important;
+                color: #ffffff !important;
+                padding: 4px 10px !important;
+                border-bottom: 1.5px solid #000000 !important;
+            }
+
+            .print-meta-header .pm-title {
+                font-size: 8.5pt !important;
+                font-weight: 800 !important;
+                letter-spacing: 0.04em !important;
+                color: #ffffff !important;
+                text-transform: uppercase !important;
+            }
+
+            .print-meta-header .pm-sub {
+                font-size: 7.5pt !important;
+                font-weight: 700 !important;
+                color: #ffffff !important;
+            }
+
+            .print-meta-table {
+                display: table !important;
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin: 0 !important;
+                border: none !important;
+                background: #ffffff !important;
+            }
+
+            .print-meta-table td {
+                padding: 5.5px 10px !important;
+                font-size: 9pt !important;
+                color: #000000 !important;
+                border: 1px solid #777777 !important;
+                height: auto !important;
+                text-align: left !important;
+                vertical-align: middle !important;
+                white-space: nowrap !important;
+            }
+
+            .print-meta-table td strong {
+                font-weight: 800 !important;
+                color: #000000 !important;
+                margin-left: 4px !important;
+                font-size: 9pt !important;
+            }
+
+            .meta-lbl {
+                color: #333333 !important;
+                font-weight: 700 !important;
+                font-size: 8.5pt !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.02em !important;
+            }
+
+            .meta-sub {
+                color: #555555 !important;
+                font-weight: 500 !important;
+                font-size: 8pt !important;
+            }
+
+            /* Settlement Breakdown Card & Table takes 85%+ of Page with Clear Sizing */
+            .calc-area {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+            }
+
+            .calc-header-bar {
+                display: none !important;
+            }
+
+            table {
+                width: 100% !important;
+                border: 2px solid #000000 !important;
+                border-collapse: collapse !important;
+                page-break-inside: avoid !important;
+            }
+
+            th, td {
+                padding: 6px 10px !important;
+                font-size: 9.5pt !important;
+                border: 1px solid #64748b !important;
+                color: #000000 !important;
+                height: 31px !important;
+            }
+
+            th:first-child, td:first-child {
+                width: 44% !important;
+                padding-left: 10px !important;
+            }
+
+            thead th {
+                background: #f1f5f9 !important;
+                border-bottom: 2px solid #000000 !important;
+                font-size: 10pt !important;
+                height: 34px !important;
+                color: #000000 !important;
+            }
+
+            .calc-desc {
+                font-size: 7.5pt !important;
+                color: #475569 !important;
+                margin-top: 1px !important;
+            }
+
+            .matrix-input, .field-input, .rate-box-input {
+                border: none !important;
+                background: transparent !important;
+                color: #000000 !important;
+                font-weight: 700 !important;
+                text-align: right !important;
+                font-size: 9.5pt !important;
+                padding: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+            }
+
+            .rate-input-wrap::after {
+                position: static !important;
+                margin-left: 2px !important;
+                color: #000000 !important;
+                font-size: 9.5pt !important;
+            }
+
+            .rate-header-1, .rate-header-2, .rate-header-3 {
+                border-top: 2.5px solid #000000 !important;
+                color: #000000 !important;
+            }
+
+            .subtotal-row, .receivable-row, .calc-amt-row {
+                background: #f8fafc !important;
+            }
+            .subtotal-row td, .receivable-row td, .calc-amt-row td {
+                font-weight: 800 !important;
+                color: #000000 !important;
+            }
+            .subtotal-row .matrix-output, .receivable-row .matrix-output, .calc-amt-row .matrix-output {
+                color: #000000 !important;
+                font-weight: 800 !important;
+                font-size: 9.5pt !important;
+            }
+
+            .final-row {
+                background: #e2e8f0 !important;
+                border-top: 2.5px solid #000000 !important;
+                border-bottom: 2.5px solid #000000 !important;
+                height: 38px !important;
+            }
+
+            .final-row td:first-child, .final-val {
+                color: #000000 !important;
+                font-weight: 900 !important;
+                font-size: 11pt !important;
+            }
+
+            /* Official Bank Verification & Signature Block */
+            .print-signatures-block {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: flex-end !important;
+                margin-top: 26px !important;
+                padding-top: 10px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                border-top: 1px dashed #555555 !important;
+            }
+
+            .print-sig-col {
+                text-align: center !important;
+                width: 30% !important;
+            }
+
+            .print-sig-line {
+                border-top: 1px solid #000000 !important;
+                margin-bottom: 4px !important;
+            }
+
+            .print-sig-title {
+                font-size: 8pt !important;
+                font-weight: 750 !important;
+                color: #000000 !important;
+                text-transform: uppercase !important;
+            }
+
+            .print-sig-sub {
+                font-size: 7pt !important;
+                color: #444444 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="arb-container">
+    <!-- Print Only Header -->
+    <div class="print-only-header" style="display: none; width: 100%;">
+        <h2>ARB SAMOPCHAR (D1) COMPROMISE SETTLEMENT REPORT</h2>
+        <p>Cooperative Banking Section 101/91 Dispute Settlement & Three-Tier Rate Appraisal</p>
+    </div>
+
+    <!-- Print Only Borrower & Dates Section (Spacious, Well-Structured, Zero Wrapping) -->
+    <div class="print-meta-card" style="display: none;">
+        <div class="print-meta-header">
+            <span class="pm-title">👤 BORROWER & CHRONOLOGY PARAMETERS</span>
+            <span class="pm-sub">Section 101/91 Dispute Settlement Case Data</span>
+        </div>
+        <table class="print-meta-table">
+            <tr>
+                <td colspan="2" style="width: 62%;">
+                    <span class="meta-lbl">Borrower Name:</span>
+                    <strong id="prt_custName">-</strong>
+                </td>
+                <td style="width: 38%;">
+                    <span class="meta-lbl">Loan Account No:</span>
+                    <strong id="prt_loanNumber">-</strong>
+                </td>
+            </tr>
+            <tr>
+                <td style="width: 33.3%;">
+                    <span class="meta-lbl">NPA Date:</span>
+                    <strong id="prt_npaDate">-</strong>
+                </td>
+                <td style="width: 33.3%;">
+                    <span class="meta-lbl">D1 Date (+12M):</span>
+                    <strong id="prt_d1Date">-</strong>
+                </td>
+                <td style="width: 33.4%;">
+                    <span class="meta-lbl">Prastav Date:</span>
+                    <strong id="prt_prastavDate">-</strong>
+                </td>
+            </tr>
+            <tr>
+                <td style="background: #f8fafc;">
+                    <span class="meta-lbl">Overdue Duration:</span>
+                    <strong id="prt_days">0 Days</strong>
+                </td>
+                <td colspan="2" style="background: #f8fafc;">
+                    <span class="meta-lbl">Cost of Process Rate:</span>
+                    <strong id="prt_cp" style="color: #0f2c58; font-size: 9.5pt;">0.75%</strong>
+                    <span class="meta-sub" style="margin-left: 6px;">(Legal & Arbitration Recovery Cost)</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Side Panel: Customer & Dates (Hidden on Print, visible on screen) -->
+    <aside class="side-panel">
+        <div class="panel-header">
+            <div class="panel-title">👤 Borrower & Dates</div>
+        </div>
+
+        <div class="section-label">Borrower Account</div>
+        <div class="field-group">
+            <label class="field-label" for="custName">Customer Name</label>
+            <input type="text" id="custName" class="field-input" placeholder="Enter customer name" oninput="syncPrintMeta()">
+        </div>
+        <div class="field-group">
+            <label class="field-label" for="loanNumber">Loan Account Number</label>
+            <input type="text" id="loanNumber" class="field-input" placeholder="e.g. 1621/482" oninput="syncPrintMeta()">
+        </div>
+
+        <div class="section-label">Chronology Parameters</div>
+        <div class="field-group">
+            <label class="field-label" for="npaDate">NPA Date</label>
+            <input type="date" id="npaDate" class="field-input" onchange="calc()">
+        </div>
+        <div class="field-group">
+            <label class="field-label" for="d1Date">D1 Date (NPA + 12M)</label>
+            <input type="text" id="d1Date" class="field-input readonly" readonly placeholder="dd-mm-yyyy">
+        </div>
+        <div class="field-group">
+            <label class="field-label" for="prastavDate">Prastav Date</label>
+            <input type="date" id="prastavDate" class="field-input" onchange="calc()">
+        </div>
+
+        <div class="days-badge-wrap">
+            <span class="days-badge-label">⏱️ Overdue Days:</span>
+            <span id="daysSide" class="days-badge-val">0 Days</span>
+        </div>
+
+        <!-- Live Concession Comparison Box (Pure Percentage, No "Tier", No Save Badge) -->
+        <div class="concession-box">
+            <div class="concession-header">
+                <span>🏆 Settlement Comparison</span>
+            </div>
+            <div class="concession-row tier-1">
+                <span><span id="sum_r1">8%</span> Rate:</span>
+                <strong id="sum_tot_1">₹ 0</strong>
+            </div>
+            <div class="concession-row tier-2">
+                <span><span id="sum_r2">10%</span> Rate:</span>
+                <strong id="sum_tot_2">₹ 0</strong>
+            </div>
+            <div class="concession-row tier-3">
+                <span><span id="sum_r3">12%</span> Rate:</span>
+                <strong id="sum_tot_3">₹ 0</strong>
+            </div>
+        </div>
+
+        <div class="side-actions no-print">
+            <button class="btn btn-outline btn-side" onclick="resetForm()" title="Clear and reset form inputs">
+                🧹 Reset
+            </button>
+            <button class="btn btn-primary btn-side" onclick="window.print()" title="Print ARB Settlement Sheet">
+                🖨️ Print
+            </button>
+        </div>
+    </aside>
+
+    <!-- Calculation Area: Matrix Card -->
+    <main class="calc-area">
+        <div class="calc-header-bar">
+            <div class="calc-title">
+                <span>📊 Settlement Breakdown & Three-Tier Rates</span>
+            </div>
+            <div class="cost-process-pill">
+                <span>Cost of Process:</span>
+                <input type="number" id="inline_cp_rate" class="cost-process-input" value="0.75" step="0.01" oninput="calc()">
+                <span>%</span>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Particulars</th>
+                        <!-- Percentage Only Headers (No "Tier 1", "Tier 2", "Tier 3") -->
+                        <th class="rate-header-1">
+                            <div class="rate-col-header">
+                                <div class="rate-input-wrap">
+                                    <input type="number" id="h_rate_1" class="rate-box-input" value="8" step="0.1" oninput="calc()">
+                                </div>
+                            </div>
+                        </th>
+                        <th class="rate-header-2">
+                            <div class="rate-col-header">
+                                <div class="rate-input-wrap">
+                                    <input type="number" id="h_rate_2" class="rate-box-input" value="10" step="0.1" oninput="calc()">
+                                </div>
+                            </div>
+                        </th>
+                        <th class="rate-header-3">
+                            <div class="rate-col-header">
+                                <div class="rate-input-wrap">
+                                    <input type="number" id="h_rate_3" class="rate-box-input" value="12" step="0.1" oninput="calc()">
+                                </div>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <!-- User Inputs (Auto-Synced Across 3 Columns) -->
+                    <tr class="input-row">
+                        <td>
+                            Principle Amount on D1 Date
+                            <span class="calc-desc">Base outstanding principal on date of classification</span>
+                        </td>
+                        <td><input type="number" id="v_princ_1" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_princ')"></td>
+                        <td><input type="number" id="v_princ_2" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_princ')"></td>
+                        <td><input type="number" id="v_princ_3" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_princ')"></td>
+                    </tr>
+                    <tr class="input-row">
+                        <td>Interest as on D1 Date</td>
+                        <td><input type="number" id="v_int_prast_1" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_int_prast')"></td>
+                        <td><input type="number" id="v_int_prast_2" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_int_prast')"></td>
+                        <td><input type="number" id="v_int_prast_3" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_int_prast')"></td>
+                    </tr>
+                    <tr class="input-row">
+                        <td>Other Charges (Recovery Certificate)</td>
+                        <td><input type="number" id="v_oth_1" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_oth')"></td>
+                        <td><input type="number" id="v_oth_2" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_oth')"></td>
+                        <td><input type="number" id="v_oth_3" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_oth')"></td>
+                    </tr>
+
+                    <!-- Calculated: Total Amount as per D1 -->
+                    <tr class="subtotal-row">
+                        <td>
+                            Total Amount as per D1
+                            <span class="calc-desc">(Principle + Interest + Other Charges)</span>
+                        </td>
+                        <td><span id="res_d1_1" class="matrix-output">0</span></td>
+                        <td><span id="res_d1_2" class="matrix-output">0</span></td>
+                        <td><span id="res_d1_3" class="matrix-output">0</span></td>
+                    </tr>
+
+                    <!-- Chronology Days Row -->
+                    <tr>
+                        <td>Total Days (D1 to Prastav)</td>
+                        <td><span id="res_days_1" class="matrix-output">0</span></td>
+                        <td><span id="res_days_2" class="matrix-output">0</span></td>
+                        <td><span id="res_days_3" class="matrix-output">0</span></td>
+                    </tr>
+
+                    <!-- Interest Rate Row -->
+                    <tr>
+                        <td>Applied Concession Rate</td>
+                        <td><span id="disp_rate_1" class="matrix-output" style="color:#1d4ed8">8.00 %</span></td>
+                        <td><span id="disp_rate_2" class="matrix-output" style="color:#b45309">10.00 %</span></td>
+                        <td><span id="disp_rate_3" class="matrix-output" style="color:#7e22ce">12.00 %</span></td>
+                    </tr>
+
+                    <!-- Calculated: Total Interest -->
+                    <tr>
+                        <td>
+                            Total Interest on Principal
+                            <span class="calc-desc">(Principle Amount × Interest Rate × Total Days / 36500)</span>
+                        </td>
+                        <td><span id="res_tot_int_1" class="matrix-output">0</span></td>
+                        <td><span id="res_tot_int_2" class="matrix-output">0</span></td>
+                        <td><span id="res_tot_int_3" class="matrix-output">0</span></td>
+                    </tr>
+
+                    <!-- Calculated: Total Receivable Amount -->
+                    <tr class="receivable-row">
+                        <td>
+                            Total Receivable Amount
+                            <span class="calc-desc">(Total Amount as per D1 + Total Interest)</span>
+                        </td>
+                        <td><span id="res_receiv_1" class="matrix-output">0</span></td>
+                        <td><span id="res_receiv_2" class="matrix-output">0</span></td>
+                        <td><span id="res_receiv_3" class="matrix-output">0</span></td>
+                    </tr>
+
+                    <!-- Additional Adjustments -->
+                    <tr class="input-row">
+                        <td>Insurance & Z Namuna Jahirat</td>
+                        <td><input type="number" id="v_ins_1" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_ins')"></td>
+                        <td><input type="number" id="v_ins_2" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_ins')"></td>
+                        <td><input type="number" id="v_ins_3" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_ins')"></td>
+                    </tr>
+                    <tr class="input-row">
+                        <td>Amount Received After D1 Date</td>
+                        <td><input type="number" id="v_recvd_1" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_recvd')"></td>
+                        <td><input type="number" id="v_recvd_2" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_recvd')"></td>
+                        <td><input type="number" id="v_recvd_3" class="matrix-input" value="0" oninput="syncAndCalc(this, 'v_recvd')"></td>
+                    </tr>
+
+                    <!-- Calculated: Amount Calculated as per D1 -->
+                    <tr class="calc-amt-row">
+                        <td>
+                            Amount Calculated as per D1
+                            <span class="calc-desc">(Total Receivable + Insurance − Received After D1)</span>
+                        </td>
+                        <td><span id="res_amt_d1_calc_1" class="matrix-output">0</span></td>
+                        <td><span id="res_amt_d1_calc_2" class="matrix-output">0</span></td>
+                        <td><span id="res_amt_d1_calc_3" class="matrix-output">0</span></td>
+                    </tr>
+
+                    <!-- Cost of Process Calculation -->
+                    <tr>
+                        <td>
+                            Cost of Process Amount
+                            <span class="calc-desc">(Amount Calculated as per D1 × Rate %)</span>
+                        </td>
+                        <td><span id="res_cost_val_1" class="matrix-output">0</span></td>
+                        <td><span id="res_cost_val_2" class="matrix-output">0</span></td>
+                        <td><span id="res_cost_val_3" class="matrix-output">0</span></td>
+                    </tr>
+
+                    <!-- Final Row: TOTAL PAYABLE -->
+                    <tr class="final-row">
+                        <td>
+                            💵 TOTAL PAYABLE AMOUNT
+                            <span class="calc-desc">(Amount Calculated as per D1 + Cost of Process)</span>
+                        </td>
+                        <td><span id="res_total_1" class="final-val">0</span></td>
+                        <td><span id="res_total_2" class="final-val">0</span></td>
+                        <td><span id="res_total_3" class="final-val">0</span></td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Official Bank Verification & Signature Block -->
+        <div class="print-signatures-block">
+            <div class="print-sig-col">
+                <div class="print-sig-line"></div>
+                <div class="print-sig-title">Prepared By (Clerk)</div>
+                <div class="print-sig-sub">Recovery & Settlement Section</div>
+            </div>
+            <div class="print-sig-col">
+                <div class="print-sig-line"></div>
+                <div class="print-sig-title">Audited & Verified By</div>
+                <div class="print-sig-sub">Internal Auditor / Accountant</div>
+            </div>
+            <div class="print-sig-col">
+                <div class="print-sig-line"></div>
+                <div class="print-sig-title">Sanctioned By (Manager)</div>
+                <div class="print-sig-sub">Authorized Officer / Arbitrator</div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Standard Indian number format without decimals
+    function f(n) {
+        if (window.BankingCore) {
+            return BankingCore.formatINR(n, { showSymbol: false, decimals: 0 });
+        }
+        return new Intl.NumberFormat('en-IN', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(Math.round(n));
+    }
+
+    // Synchronize inputs across 3 columns and recalculate
+    function syncAndCalc(el, baseId) {
+        const val = el.value;
+        for (let i = 1; i <= 3; i++) {
+            let target = document.getElementById(baseId + '_' + i);
+            if (target) target.value = val;
+        }
+        calc();
+    }
+
+    // Helper to format dates cleanly as DD-MM-YYYY for print display
+    function formatDisplayDate(val) {
+        if (!val || val === '-') return '-';
+        if (typeof val === 'string' && val.includes('-')) {
+            const parts = val.split('-');
+            if (parts[0].length === 4) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+        }
+        return val;
+    }
+
+    // Synchronize customer & date details to print header meta table
+    function syncPrintMeta() {
+        const cust = document.getElementById('custName').value.trim() || '-';
+        const loan = document.getElementById('loanNumber').value.trim() || '-';
+        const npa = formatDisplayDate(document.getElementById('npaDate').value);
+        const d1 = document.getElementById('d1Date').value || '-';
+        const pras = formatDisplayDate(document.getElementById('prastavDate').value);
+        const days = document.getElementById('daysSide').textContent || '0 Days';
+        const cpVal = parseFloat(document.getElementById('inline_cp_rate').value) || 0;
+        const cp = (cpVal % 1 === 0 ? cpVal.toFixed(0) : cpVal.toFixed(2)) + '%';
+
+        document.getElementById('prt_custName').textContent = cust;
+        document.getElementById('prt_loanNumber').textContent = loan;
+        document.getElementById('prt_npaDate').textContent = npa;
+        document.getElementById('prt_d1Date').textContent = d1;
+        document.getElementById('prt_prastavDate').textContent = pras;
+        document.getElementById('prt_days').textContent = days;
+        document.getElementById('prt_cp').textContent = cp;
+    }
+
+    window.addEventListener('beforeprint', syncPrintMeta);
+
+    // Main calculation engine
+    function calc() {
+        const npaStr = document.getElementById('npaDate').value;
+        const prasStr = document.getElementById('prastavDate').value;
+        const cp_rate = parseFloat(document.getElementById('inline_cp_rate').value) || 0;
+        let diff = 0;
+
+        // --- Step 1: D1 Date and Total Days ---
+        if (npaStr) {
+            const parts = npaStr.split('-').map(Number);
+            const npa = new Date(parts[0], parts[1] - 1, parts[2]);
+            const d1 = new Date(parts[0] + 1, parts[1] - 1, parts[2]);
+
+            const dd = String(d1.getDate()).padStart(2, '0');
+            const mm = String(d1.getMonth() + 1).padStart(2, '0');
+            document.getElementById('d1Date').value = `${dd}-${mm}-${d1.getFullYear()}`;
+
+            if (prasStr) {
+                const prasParts = prasStr.split('-').map(Number);
+                const prastav = new Date(prasParts[0], prasParts[1] - 1, prasParts[2]);
+                diff = Math.max(0, Math.floor((prastav - d1) / (1000 * 60 * 60 * 24)));
+            }
+        } else {
+            document.getElementById('d1Date').value = '';
+        }
+
+        document.getElementById('daysSide').textContent = diff + ' Days';
+
+        // --- Step 2: Per-column calculations ---
+        const totals = [];
+        for (let i = 1; i <= 3; i++) {
+            const r = parseFloat(document.getElementById('h_rate_' + i).value) || 0;
+            document.getElementById('disp_rate_' + i).innerText = r.toFixed(2) + " %";
+
+            const p = parseFloat(document.getElementById('v_princ_' + i).value) || 0;
+            const i_p = parseFloat(document.getElementById('v_int_prast_' + i).value) || 0;
+            const o = parseFloat(document.getElementById('v_oth_' + i).value) || 0;
+            const ins = parseFloat(document.getElementById('v_ins_' + i).value) || 0;
+            const rcv = parseFloat(document.getElementById('v_recvd_' + i).value) || 0;
+
+            const amtD1 = p + i_p + o;
+            const totInt = (p * r * diff) / 36500;
+            const receivable = amtD1 + totInt;
+            const amtD1Calc = receivable + ins - rcv;
+            const costOfProcessAmt = (amtD1Calc * cp_rate / 100);
+            const total = amtD1Calc + costOfProcessAmt;
+            totals.push(total);
+
+            document.getElementById('res_d1_' + i).innerText = f(amtD1);
+            document.getElementById('res_days_' + i).innerText = diff;
+            document.getElementById('res_tot_int_' + i).innerText = f(totInt);
+            document.getElementById('res_receiv_' + i).innerText = f(receivable);
+            document.getElementById('res_amt_d1_calc_' + i).innerText = f(amtD1Calc);
+            document.getElementById('res_cost_val_' + i).innerText = f(costOfProcessAmt);
+            document.getElementById('res_total_' + i).innerText = f(total);
+
+            // Update Side Panel Summary (Pure Percentage, No "Tier")
+            const rEl = document.getElementById('sum_r' + i);
+            const totEl = document.getElementById('sum_tot_' + i);
+            if (rEl) rEl.textContent = r + '%';
+            if (totEl) totEl.textContent = '₹ ' + f(total);
+        }
+
+        syncPrintMeta();
+    }
+
+    // Reset Form to Clean State
+    function resetForm() {
+        document.getElementById('custName').value = '';
+        document.getElementById('loanNumber').value = '';
+        document.getElementById('npaDate').value = '';
+        document.getElementById('d1Date').value = '';
+        document.getElementById('prastavDate').value = '';
+        document.getElementById('daysSide').textContent = '0 Days';
+        document.getElementById('inline_cp_rate').value = '0.75';
+
+        document.getElementById('h_rate_1').value = '8';
+        document.getElementById('h_rate_2').value = '10';
+        document.getElementById('h_rate_3').value = '12';
+
+        ['v_princ', 'v_int_prast', 'v_oth', 'v_ins', 'v_recvd'].forEach(field => {
+            for (let i = 1; i <= 3; i++) {
+                const el = document.getElementById(field + '_' + i);
+                if (el) el.value = 0;
+            }
+        });
+
+        calc();
+        if (window.BankingCore && BankingCore.toast) {
+            BankingCore.toast.info("ARB Samopchar form reset.");
+        }
+    }
+
+    // Initialize on page load
+    window.onload = function() {
+        calc();
+    };
+</script>
+</body>
+</html>

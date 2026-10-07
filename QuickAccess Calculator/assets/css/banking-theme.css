@@ -1,0 +1,852 @@
+/* ==========================================================================
+   BANKING UTILITY CONSOLE — PREMIUM FINTECH ENTERPRISE DESIGN SYSTEM
+   Curated palette, glassmorphism, micro-animations, and tabular typography
+   Optimized for high-density desktop displays & multi-calculator workstation
+   ========================================================================== */
+
+:root {
+  /* Core Luxury Navy & Obsidian Palette */
+  --bank-navy: #0F172A;
+  --bank-navy-light: #1E293B;
+  
+  /* Vibrant Fintech Accents */
+  --bank-blue: #2563EB;
+  --bank-blue-subtle: #EFF6FF;
+  
+  
+  --bank-gold: #D97706;
+  --bank-gold-hover: #B45309;
+  --bank-gold-subtle: #FEF3C7;
+  --bank-gold-bright: #F59E0B;
+  
+  --bank-emerald-bright: #10B981;
+  
+  
+  --bank-rose-bright: #F43F5E;
+  
+  --bank-violet-bright: #8B5CF6;
+  
+  
+  /* Slate Surface System */
+  --bg-app: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #F1F5F9;
+  --bg-muted: #E2E8F0;
+  
+  /* Text Contrast Hierarchy */
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-inverse: #FFFFFF;
+  
+  /* Borders & Dividers */
+  --border-subtle: #E2E8F0;
+  --border-default: #CBD5E1;
+  --border-focus: #3B82F6;
+  
+  /* Status Semantics */
+  --status-success: #059669;
+  --status-success-bg: #ECFDF5;
+  --status-success-border: #A7F3D0;
+  
+  --status-danger: #DC2626;
+  --status-danger-bg: #FEF2F2;
+  --status-danger-border: #FECACA;
+  
+  --status-warning: #D97706;
+  --status-warning-bg: #FFFBEB;
+  --status-warning-border: #FDE68A;
+  
+  --status-info: #0284C7;
+  --status-info-bg: #F0F9FF;
+  --status-info-border: #BAE6FD;
+  
+  /* Shadows & Elevation */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.07), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.09), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  
+  /* Aliases used by individual tool pages (previously undefined -> silently ignored) */
+  --bg-surface-alt: #F8FAFC;
+  --font-sans: var(--font-family);
+  --primary: var(--bank-blue);
+  --danger: var(--status-danger);
+  --success: var(--status-success);
+  --danger-text: #B91C1C;
+  --warn-text: #92400E;
+
+  /* Geometry */
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-full: 9999px;
+  
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+/* Global Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font-family);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-size: 13.5px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'tnum' 1, 'cv02' 1, 'cv03' 1;
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
+}
+
+/* App Container - Fully Adaptive & Responsive Across All Laptop, Desktop & Large Monitor Sizes */
+.app-container {
+  width: 100%;
+  max-width: min(100% - 24px, 1380px);
+  margin: 0 auto;
+  padding: 0 8px 24px;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .app-container {
+    padding: 0 16px 24px;
+    max-width: min(100% - 32px, 1420px);
+  }
+}
+
+@media (min-width: 1440px) {
+  .app-container {
+    max-width: min(100% - 48px, 1540px);
+  }
+}
+
+.app-container > .bank-card:first-of-type,
+.app-container > .grid-2:first-of-type,
+.app-container > .container:first-of-type {
+  margin-top: 0 !important;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 2;
+}
+
+/* Bank Cards */
+.bank-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  padding: 22px;
+  margin-bottom: 20px;
+  transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+
+.bank-card:hover {
+  box-shadow: 0 10px 22px -3px rgba(15, 23, 42, 0.07), 0 4px 6px -2px rgba(15, 23, 42, 0.03);
+  border-color: var(--border-default);
+}
+
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--bank-navy);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+/* Grids - Fluid, Multi-Screen Adaptive System */
+.grid-2 { 
+  display: grid; 
+  grid-template-columns: repeat(2, minmax(0, 1fr)); 
+  gap: 16px; 
+}
+.grid-3 { 
+  display: grid; 
+  grid-template-columns: repeat(3, minmax(0, 1fr)); 
+  gap: 16px; 
+}
+.grid-4 { 
+  display: grid; 
+  grid-template-columns: repeat(4, minmax(0, 1fr)); 
+  gap: 14px; 
+}
+
+/* Laptops & Standard Windows scaling (125%-150% scaling, width < 1120px) */
+@media (max-width: 1120px) {
+  .grid-4 { 
+    grid-template-columns: repeat(2, minmax(0, 1fr)); 
+    gap: 14px;
+  }
+}
+
+/* Restored Windows & Mid-Screens (width < 880px) */
+@media (max-width: 880px) {
+  .grid-3 { 
+    grid-template-columns: repeat(2, minmax(0, 1fr)); 
+    gap: 14px;
+  }
+  .grid-2 { 
+    grid-template-columns: 1fr; 
+    gap: 14px;
+  }
+}
+
+/* Compact Laptop / Mobile / Window Split-Snap (width < 640px) */
+@media (max-width: 640px) {
+  .grid-2, .grid-3, .grid-4 { 
+    grid-template-columns: 1fr; 
+    gap: 12px;
+  }
+}
+
+/* Form Controls */
+.form-group {
+  margin-bottom: 14px;
+  min-width: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.725rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.form-control {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus {
+  border-color: var(--border-focus);
+  background-color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.form-control:disabled, .form-control[readonly] {
+  background-color: var(--bg-muted);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+/* Modern Gradient Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  line-height: 1.2;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+  color: var(--text-inverse);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #334155 0%, #1E293B 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+  color: #FFFFFF;
+}
+
+.btn-outline {
+  background-color: transparent;
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+
+.btn-outline:hover {
+  background-color: var(--bg-subtle);
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #34D399 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.775rem;
+  border-radius: var(--radius-xs);
+}
+
+/* Stat Cards */
+.stat-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-xs);
+  border-left: 4px solid var(--bank-blue);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-card.gold { border-left-color: var(--bank-gold-bright); }
+.stat-card.green { border-left-color: var(--bank-emerald-bright); }
+
+.stat-card .stat-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.stat-card .stat-value {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--bank-navy);
+  letter-spacing: -0.02em;
+}
+
+.stat-card .stat-sub {
+  font-size: 0.725rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* Tables */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.bank-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.bank-table th {
+  background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+  color: var(--text-inverse);
+  padding: 11px 16px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.bank-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  transition: background-color 0.15s ease;
+}
+
+.bank-table tbody tr:nth-child(even) {
+  background-color: #F8FAFC;
+}
+
+.bank-table tbody tr:hover {
+  background-color: #EFF6FF;
+}
+
+.bank-table td.num, .bank-table th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.bank-table .row-total {
+  background-color: #F1F5F9 !important;
+  font-weight: 700;
+  border-top: 2px solid var(--bank-navy);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-success { background-color: var(--status-success-bg); color: var(--status-success); border: 1px solid var(--status-success-border); }
+.badge-danger { background-color: var(--status-danger-bg); color: var(--status-danger); border: 1px solid var(--status-danger-border); }
+.badge-warning { background-color: var(--status-warning-bg); color: var(--status-warning); border: 1px solid var(--status-warning-border); }
+.badge-info { background-color: var(--status-info-bg); color: var(--status-info); border: 1px solid var(--status-info-border); }
+.badge-navy { background-color: var(--bank-navy); color: #FFF; }
+.badge-gold { background-color: var(--bank-gold-subtle); color: var(--bank-gold); border: 1px solid #FDE68A; }
+
+/* Upload Dropzone */
+.upload-dropzone {
+  border: 2px dashed var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 24px;
+  text-align: center;
+  background-color: var(--bg-subtle);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.upload-dropzone:hover, .upload-dropzone.dragover {
+  border-color: var(--bank-blue);
+  background-color: var(--bank-blue-subtle);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+
+.upload-dropzone input[type="file"] {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Toasts */
+#bank-toast-container {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.bank-toast {
+  pointer-events: auto;
+  min-width: 280px;
+  max-width: 400px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 12px 18px;
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-left: 4px solid var(--bank-navy);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.bank-toast.success { border-left-color: var(--status-success); }
+.bank-toast.error { border-left-color: var(--status-danger); }
+.bank-toast.warning { border-left-color: var(--status-warning); }
+
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ==========================================================================
+   INTERACTIVE COMPONENTS & STAT CARD VARIANTS
+   ========================================================================== */
+
+/* Modern Segmented Control Pills */
+.segment-control {
+  display: inline-flex;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 3px;
+  width: 100%;
+}
+
+/* Stat Cards Modern Variants */
+.stat-card-modern {
+  position: relative;
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  border: 1px solid #E2E8F0;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.stat-card-modern::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3.5px;
+  background: transparent;
+  transition: all 0.22s ease;
+}
+
+.stat-card-modern:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px -3px rgba(15, 23, 42, 0.08), 0 3px 6px -2px rgba(15, 23, 42, 0.03);
+}
+
+.stat-card-gold {
+  background: linear-gradient(145deg, #FFFFFF 0%, #FFFDF9 50%, #FEF9ED 100%);
+  border-color: #FDE68A;
+}
+.stat-card-gold::before {
+  background: linear-gradient(90deg, #F59E0B, #D97706);
+}
+
+.stat-card-blue {
+  background: linear-gradient(145deg, #FFFFFF 0%, #FAFDFF 50%, #F0F7FF 100%);
+  border-color: #BFDBFE;
+}
+.stat-card-blue::before {
+  background: linear-gradient(90deg, #3B82F6, #2563EB);
+}
+
+.stat-card-emerald {
+  background: linear-gradient(145deg, #FFFFFF 0%, #FAFFFC 50%, #F0FDF4 100%);
+  border-color: #BBF7D0;
+}
+.stat-card-emerald::before {
+  background: linear-gradient(90deg, #10B981, #059669);
+}
+
+.stat-card-violet {
+  background: linear-gradient(145deg, #FFFFFF 0%, #FDFAFF 50%, #FAF5FF 100%);
+  border-color: #E9D5FF;
+}
+.stat-card-violet::before {
+  background: linear-gradient(90deg, #8B5CF6, #7C3AED);
+}
+
+/* Aspect Ratio & Media Preservation */
+img, svg {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* ==========================================================================
+   UNIVERSAL A4 BLACK & WHITE / GRAYSCALE PRINTING ENGINE
+   Strictly optimized for standard office laser / monochrome printing:
+   Zero color bleed, high-contrast borders, repeating headers & audit sign-off
+   ========================================================================== */
+
+.print-only-header,
+.print-signatures-block {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm 10mm 12mm;
+  }
+  
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  html, body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    font-size: 9pt !important;
+    line-height: 1.35 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+  }
+
+  /* Universal Hide for UI / Interactive Controls */
+  .no-print, 
+  .header-actions, 
+  .btn, 
+  .upload-dropzone, 
+  #bank-toast-container, 
+  .nav-item, 
+  .sidebar, 
+  .topbar, 
+  .empty-state, 
+  .loader, 
+  #status-msg, 
+  .cmd-palette-overlay, 
+  .legend, 
+  .side-actions,
+  .cost-process-pill,
+  .slider-control,
+  input[type="range"],
+  .kbd-badge {
+    display: none !important;
+  }
+
+  /* App Containers & Cards in Print */
+  .app-container, .arb-container, .charges-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  .bank-card {
+    border: 1px solid #333333 !important;
+    background: #FFFFFF !important;
+    box-shadow: none !important;
+    padding: 8px 12px !important;
+    margin-bottom: 12px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    border-radius: 4px !important;
+  }
+
+  .card-title {
+    color: #000000 !important;
+    border-bottom: 1.5px solid #000000 !important;
+    padding-bottom: 4px !important;
+    margin-bottom: 8px !important;
+    font-size: 10pt !important;
+    font-weight: 800 !important;
+  }
+
+  /* Professional Bank Audit Report Header */
+  .print-only-header {
+    display: block !important;
+    border-bottom: 2px solid #000000 !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 10px !important;
+    text-align: center !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .print-only-header h2 {
+    font-size: 12.5pt !important;
+    font-weight: 800 !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.03em !important;
+  }
+
+  .print-only-header p {
+    font-size: 8pt !important;
+    color: #333333 !important;
+    margin: 2px 0 0 !important;
+    font-weight: 500 !important;
+  }
+
+  /* Tables in Pure Black & White / Grayscale */
+  .table-container, .table-wrap {
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin-bottom: 8px !important;
+    width: 100% !important;
+  }
+
+  table, .bank-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+    border: 1.5px solid #000000 !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tfoot {
+    display: table-footer-group !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  th, .bank-table th {
+    background: #EAEAEA !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+    font-weight: 800 !important;
+    font-size: 8.5pt !important;
+    padding: 4px 6px !important;
+    text-transform: uppercase !important;
+    text-align: center !important;
+  }
+
+  td, .bank-table td {
+    background: transparent !important;
+    color: #000000 !important;
+    border: 1px solid #555555 !important;
+    font-size: 8.5pt !important;
+    padding: 4px 6px !important;
+  }
+
+  .bank-table th.num, .bank-table td.num {
+    text-align: right !important;
+  }
+
+  .row-total td, .bank-table .row-total td {
+    background: #EAEAEA !important;
+    font-weight: 900 !important;
+    border-top: 2px solid #000000 !important;
+    border-bottom: 2px solid #000000 !important;
+    color: #000000 !important;
+  }
+
+  /* Form inputs & controls converted to crisp print values */
+  .form-control, input, select {
+    border: none !important;
+    border-bottom: 1px solid #666666 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #000000 !important;
+    padding: 1px 0 !important;
+    font-weight: 700 !important;
+    font-size: 8.5pt !important;
+    height: auto !important;
+  }
+
+  /* Stat Cards in Grayscale */
+  .stat-card, .stat-card-modern {
+    border: 1px solid #444444 !important;
+    background: #FFFFFF !important;
+    box-shadow: none !important;
+    padding: 6px 10px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .stat-card::before, .stat-card-modern::before { display: none !important; }
+  .stat-label, .stat-label-modern { color: #333333 !important; font-size: 7.5pt !important; font-weight: 700 !important; }
+  .stat-value, .stat-value-modern { color: #000000 !important; font-size: 11pt !important; font-weight: 800 !important; }
+  .stat-sub { color: #555555 !important; font-size: 7pt !important; }
+
+  /* Grid Layouts inside Print */
+  .grid-2, .grid-3, .grid-4 {
+    display: grid !important;
+    gap: 8px !important;
+  }
+  .grid-4 { grid-template-columns: repeat(4, 1fr) !important; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr) !important; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Official Bank Verification & Signature Block */
+  .print-signatures-block {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-end !important;
+    margin-top: 36px !important;
+    padding-top: 14px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    border-top: 1px dashed #777777 !important;
+  }
+
+  .print-sig-col {
+    text-align: center !important;
+    width: 30% !important;
+  }
+
+  .print-sig-line {
+    border-top: 1px solid #000000 !important;
+    margin-bottom: 4px !important;
+  }
+
+  .print-sig-title {
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+    color: #000000 !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-sig-sub {
+    font-size: 7pt !important;
+    color: #555555 !important;
+  }
+}
+
+
