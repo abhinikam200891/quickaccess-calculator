@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banking Date & Duration Calculator</title>
+    <meta name="tool-name" content="Date Calculator">
+    <meta name="tool-icon" content="📅">
+    <meta name="tool-desc" content="Banking day-count duration & dates">
+    <link rel="stylesheet" href="../assets/css/banking-theme.css">
+    <style>
+        body {
+            padding: 0 16px 20px;
+            margin: 0;
+            background: var(--bg-app);
+            min-height: 100vh;
+        }
+
+        .highlight-stat {
+            background: linear-gradient(135deg, var(--bank-navy) 0%, var(--bank-navy-light) 100%);
+            color: white;
+            padding: 20px;
+            border-radius: var(--radius-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid var(--bank-gold);
+            margin-top: 16px;
+        }
+
+        @media print {
+            @page { size: A4 portrait; margin: 10mm 12mm 10mm 12mm; }
+            body { background: white !important; padding: 0 !important; color: #000000 !important; font-size: 8.5pt !important; }
+            .no-print, .btn, .pill-btn { display: none !important; }
+            .grid-2 { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+            .bank-card { border: 1.5px solid #000 !important; box-shadow: none !important; padding: 10px !important; margin: 0 !important; background: #fff !important; }
+            .stat-card { border: 1px solid #000 !important; background: #fff !important; }
+            .stat-value { color: #000 !important; }
+            .highlight-stat { background: #EAEAEA !important; color: #000 !important; border: 1.5px solid #000 !important; }
+            .highlight-stat * { color: #000000 !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container" style="max-width: 950px;">
+    <!-- Print Only Header -->
+    <div class="print-only-header">
+        <h2 style="margin: 0; font-size: 1.3rem;">BANKING DATE & DURATION AUDIT REPORT</h2>
+        <p style="margin: 3px 0 0; font-size: 0.8rem; color: #555;">Accurate day-count conventions, leap year validation, and tenure breakdowns</p>
+    </div>
+
+    <div class="grid-2">
+        <!-- Date Parameters Input Card -->
+        <div class="bank-card">
+            <div class="card-title">
+                <span>🗓️ Date Parameters</span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="badge badge-navy">Day-Count Mode</span>
+                    <button class="btn btn-outline btn-sm" onclick="resetForm()">
+                        🔄 Reset
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label class="form-label" for="startDate">Start Date</label>
+                    <button class="pill-btn" onclick="setStartDateFYStart()" style="padding: 2px 8px; font-size: 0.7rem;">FY Start (1 Apr)</button>
+                </div>
+                <input type="date" id="startDate" class="form-control" onchange="calculateDate()">
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label class="form-label" for="endDate">End Date</label>
+                    <button class="pill-btn" onclick="setEndDateToday()" style="padding: 2px 8px; font-size: 0.7rem;">Today</button>
+                </div>
+                <input type="date" id="endDate" class="form-control" onchange="calculateDate()">
+            </div>
+
+            <!-- Banking Convention Checkbox -->
+            <div style="display: flex; align-items: center; gap: 8px; margin: 16px 0; padding: 10px; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                <input type="checkbox" id="inclusiveCheck" onchange="calculateDate()" style="cursor: pointer; width: 16px; height: 16px;">
+                <label for="inclusiveCheck" style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); cursor: pointer;">
+                    Both Dates Inclusive (+1 Day for Interest calculation)
+                </label>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="calculateDate()">
+                Calculate Duration Breakdown
+            </button>
+        </div>
+
+        <!-- Duration Results Breakdown Card -->
+        <div class="bank-card">
+            <div class="card-title">
+                <span>⏱️ Duration Breakdown</span>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <span class="badge badge-success" id="convention-tag">Standard (Exclusive)</span>
+                    <button class="btn btn-outline btn-sm no-print" onclick="window.print()">🖨️ Print</button>
+                </div>
+            </div>
+
+            <div id="results-wrapper">
+                <div class="grid-3" style="margin-bottom: 16px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Years</div>
+                        <div class="stat-value" id="rY">0</div>
+                        <div class="stat-sub">Calendar Years</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Months</div>
+                        <div class="stat-value" id="rM">0</div>
+                        <div class="stat-sub">Remainder Months</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Days</div>
+                        <div class="stat-value" id="rD">0</div>
+                        <div class="stat-sub">Remaining Days</div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="stat-card gold">
+                        <div class="stat-label">Total Full Months</div>
+                        <div class="stat-value" id="rTM">0</div>
+                        <div class="stat-sub">+ <span id="rXD">0</span> Extra Days</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Weeks</div>
+                        <div class="stat-value" id="rWeeks">0</div>
+                        <div class="stat-sub">Full weeks elapsed</div>
+                    </div>
+                </div>
+
+                <!-- Total Days Hero Highlight -->
+                <div class="highlight-stat">
+                    <div>
+                        <div style="font-size: 0.775rem; text-transform: uppercase; color: var(--bank-gold); font-weight: 700; letter-spacing: 0.05em;">
+                            Total Countable Days
+                        </div>
+                        <div style="font-size: 0.85rem; color: #CBD5E1; margin-top: 2px;">
+                            Used for interest product calculation
+                        </div>
+                    </div>
+                    <div style="font-size: 2.2rem; font-weight: 800; font-family: var(--font-family);" id="rTD">
+                        0 Days
+                    </div>
+                </div>
+
+                <!-- Financial Year Info -->
+                <div style="margin-top: 16px; padding: 12px 14px; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-secondary);">Start Date FY: <strong id="startFY">-</strong></span>
+                    <span style="color: var(--text-secondary);">End Date FY: <strong id="endFY">-</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Official Bank Verification & Signature Block -->
+    <div class="print-signatures-block" style="margin-top: 24px;">
+        <div class="print-sig-col">
+            <div class="print-sig-line"></div>
+            <div class="print-sig-title">Prepared By (Clerk)</div>
+            <div class="print-sig-sub">Banking Operations Desk</div>
+        </div>
+        <div class="print-sig-col">
+            <div class="print-sig-line"></div>
+            <div class="print-sig-title">Audited & Verified By</div>
+            <div class="print-sig-sub">Internal Auditor / Accountant</div>
+        </div>
+        <div class="print-sig-col">
+            <div class="print-sig-line"></div>
+            <div class="print-sig-title">Sanctioned By</div>
+            <div class="print-sig-sub">Branch Manager</div>
+        </div>
+    </div>
+</div>
+
+<script src="../assets/js/banking-core.js"></script>
+<script>
+    function setEndDateToday() {
+        document.getElementById('endDate').value = new Date().toISOString().split('T')[0];
+        calculateDate();
+    }
+
+    function setStartDateFYStart() {
+        const today = new Date();
+        const year = (today.getMonth() + 1 >= 4) ? today.getFullYear() : today.getFullYear() - 1;
+        document.getElementById('startDate').value = `${year}-04-01`;
+        calculateDate();
+    }
+
+    function calculateDate() {
+        const sVal = document.getElementById('startDate').value;
+        const eVal = document.getElementById('endDate').value;
+        const inclusive = document.getElementById('inclusiveCheck').checked;
+
+        if (!sVal || !eVal) return;
+
+        const d1 = new Date(sVal);
+        const d2 = new Date(eVal);
+
+        if (d1 > d2) {
+            BankingCore.toast.error("Start date cannot be after End date.");
+            return;
+        }
+
+        // Tag label
+        document.getElementById('convention-tag').innerText = inclusive ? "Both Inclusive (+1)" : "Standard (Exclusive)";
+
+        // Years, Months, Days Breakdown
+        let Y = d2.getFullYear() - d1.getFullYear();
+        let M = d2.getMonth() - d1.getMonth();
+        let D = d2.getDate() - d1.getDate();
+
+        if (D < 0) {
+            M--;
+            const prevMonthDays = new Date(d2.getFullYear(), d2.getMonth(), 0).getDate();
+            D += prevMonthDays;
+        }
+        if (M < 0) {
+            Y--;
+            M += 12;
+        }
+
+        // Total Days via BankingCore
+        const totalDays = (window.BankingCore && BankingCore.dates) 
+            ? BankingCore.dates.daysBetween(d1, d2, inclusive)
+            : Math.round(Math.abs((Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate()) - Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate())) / 86400000)) + (inclusive ? 1 : 0);
+
+        // Total Months & Weeks
+        const totalMonths = (Y * 12) + M;
+        const totalWeeks = Math.floor(totalDays / 7);
+
+        // Update DOM
+        document.getElementById('rY').innerText = Y;
+        document.getElementById('rM').innerText = M;
+        document.getElementById('rD').innerText = D;
+        document.getElementById('rTM').innerText = totalMonths;
+        document.getElementById('rXD').innerText = D;
+        document.getElementById('rWeeks').innerText = totalWeeks;
+        document.getElementById('rTD').innerText = `${totalDays} Days`;
+
+        if (window.BankingCore) {
+            document.getElementById('startFY').innerText = `FY ${BankingCore.dates.getFinancialYear(d1)}`;
+            document.getElementById('endFY').innerText = `FY ${BankingCore.dates.getFinancialYear(d2)}`;
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        document.getElementById('inclusiveCheck').checked = false;
+        document.getElementById('rY').innerText = '0';
+        document.getElementById('rM').innerText = '0';
+        document.getElementById('rD').innerText = '0';
+        document.getElementById('rTM').innerText = '0';
+        document.getElementById('rXD').innerText = '0';
+        document.getElementById('rWeeks').innerText = '0';
+        document.getElementById('rTD').innerText = '0 Days';
+        document.getElementById('startFY').innerText = '-';
+        document.getElementById('endFY').innerText = '-';
+    }
+
+    window.onload = function() {
+        const today = new Date();
+        const year = (today.getMonth() + 1 >= 4) ? today.getFullYear() : today.getFullYear() - 1;
+        document.getElementById('startDate').value = `${year}-04-01`;
+        document.getElementById('endDate').value = today.toISOString().split('T')[0];
+        calculateDate();
+    };
+</script>
+</body>
+</html>

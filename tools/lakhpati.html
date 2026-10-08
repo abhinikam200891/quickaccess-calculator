@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lakhpati Penalty Calculator</title>
+    <meta name="tool-name" content="Lakhpati Penalty">
+    <meta name="tool-icon" content="⚠️">
+    <meta name="tool-desc" content="Lakhpati RD penalty calculations">
+    <link rel="stylesheet" href="../assets/css/banking-theme.css">
+    <script src="../assets/js/banking-core.js"></script>
+    <script src="../assets/js/calculators/lakhpati-engine.js"></script>
+    <style>
+        body {
+            padding: 0 16px 20px;
+            margin: 0;
+            background: var(--bg-app);
+            min-height: 100vh;
+        }
+
+        .readonly-field {
+            background-color: var(--bg-surface-alt) !important;
+            color: var(--text-primary);
+            font-weight: 600;
+            cursor: default;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            background: var(--bg-surface-alt);
+            border-radius: var(--radius-sm);
+            border: 2px dashed var(--border-subtle);
+        }
+
+        .text-red { color: var(--status-danger) !important; }
+        .text-blue { color: var(--bank-navy) !important; }
+
+        @media print {
+            @page { size: A4 portrait; margin: 10mm 12mm 10mm 12mm; }
+            body { background: white !important; padding: 0 !important; color: #000000 !important; font-size: 8.5pt !important; }
+            .no-print, .btn, .empty-state { display: none !important; }
+            .grid-2 { display: block !important; }
+            .bank-card { border: 1px solid #333 !important; box-shadow: none !important; padding: 10px !important; margin: 0 0 12px !important; background: #fff !important; }
+            .stat-card-modern { border: 1.5px solid #000 !important; background: #EAEAEA !important; padding: 8px 10px !important; }
+            .stat-value { color: #000 !important; font-weight: 800 !important; }
+            .text-red, .text-blue { color: #000000 !important; font-weight: 800 !important; }
+            .bank-table th { background: #EAEAEA !important; color: #000 !important; border: 1px solid #000 !important; }
+            .bank-table td { border: 1px solid #555 !important; color: #000 !important; }
+        }
+    </style>
+</head>
+<body id="app-body">
+
+<div class="app-container" style="max-width: 1200px;">
+    <!-- Print Only Header -->
+    <div class="print-only-header">
+        <h2 style="margin: 0; font-size: 1.3rem;">LAKHPATI RD PENALTY AUDIT REPORT</h2>
+        <p style="margin: 3px 0 0; font-size: 0.8rem; color: #555;">Recurring Deposit Installment Arrears & Cumulative Penalty Calculation</p>
+    </div>
+
+    <div class="grid-2" style="gap: 24px; align-items: start;">
+        <!-- Left: Inputs Card -->
+        <div class="bank-card no-print">
+            <div class="card-title">
+                <span>⚙️ Account & Installment Parameters</span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="badge badge-navy" id="reportDate">Today</span>
+                    <button class="btn btn-outline btn-sm" onclick="window.print()">
+                        🖨️ Print
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid-2" style="gap: 16px; margin-bottom: 14px;">
+                <div class="form-group">
+                    <label class="form-label">Today's Date</label>
+                    <input type="text" id="displayCurrentDate" readonly class="form-control readonly-field">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="openDate">Account Open Date</label>
+                    <input type="date" id="openDate" class="form-control">
+                </div>
+            </div>
+
+            <div class="grid-2" style="gap: 16px; margin-bottom: 14px;">
+                <div class="form-group">
+                    <label class="form-label" for="amount">Monthly Installment (₹)</label>
+                    <input type="number" id="amount" class="form-control" placeholder="e.g. 1000">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Expected Total Till Today</label>
+                    <input type="text" id="autoExpected" readonly class="form-control readonly-field" value="₹ 0" style="color: var(--bank-navy); font-weight:700;">
+                </div>
+            </div>
+
+            <div class="grid-2" style="gap: 16px; margin-bottom: 14px;">
+                <div class="form-group">
+                    <label class="form-label" for="received">Total Received Till Date (₹)</label>
+                    <input type="number" id="received" class="form-control" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Installment Arrears Status</label>
+                    <input type="text" id="calculatedSkipped" readonly class="form-control readonly-field" value="-">
+                    <input type="hidden" id="skippedValue" value="0">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label class="form-label" for="rate">Monthly Penalty Rate (%)</label>
+                <input type="number" id="rate" class="form-control" value="1" step="0.1">
+            </div>
+
+            <button class="btn btn-primary" onclick="calculateCumulative()" style="width: 100%; padding: 12px; font-weight: 700;">
+                ⚡ Calculate Penalty Report
+            </button>
+        </div>
+
+        <!-- Right: Results Card -->
+        <div class="bank-card">
+            <div class="card-title">
+                <span>📊 Lakhpati Penalty & Dues Summary</span>
+                <span class="badge badge-gold">Detailed Audit</span>
+            </div>
+
+            <div id="placeholder-state" class="empty-state">
+                <div style="font-size: 2rem; margin-bottom: 8px;">📑</div>
+                <strong>Ready to Calculate</strong>
+                <p style="margin: 4px 0 0 0; font-size: 0.85rem;">Enter account opening date and installment amounts on the left to generate the schedule.</p>
+            </div>
+
+            <div id="result-area" style="display: none; flex-direction: column;">
+                <!-- 4 Metrics Grid -->
+                <div class="grid-2" style="gap: 12px; margin-bottom: 16px;">
+                    <div class="stat-card-modern stat-card-blue">
+                        <div class="stat-label">Total Expected</div>
+                        <div class="stat-value" id="displayExpected" style="font-size: 1.15rem;">₹ 0</div>
+                        <div class="stat-sub">Expected deposit sum</div>
+                    </div>
+                    <div class="stat-card-modern stat-card-violet">
+                        <div class="stat-label">Pending Principal</div>
+                        <div class="stat-value" id="displayPending" style="font-size: 1.15rem;">₹ 0</div>
+                        <div class="stat-sub">Arrears installment amount</div>
+                    </div>
+                    <div class="stat-card-modern stat-card-gold">
+                        <div class="stat-label">Total Penalty</div>
+                        <div class="stat-value text-red" id="displayPenalty" style="font-size: 1.15rem;">₹ 0</div>
+                        <div class="stat-sub">Cumulative default penalty</div>
+                    </div>
+                    <div class="stat-card-modern stat-card-emerald">
+                        <div class="stat-label">Grand Total Due</div>
+                        <div class="stat-value" id="displayTotal" style="font-size: 1.15rem; color: #065f46;">₹ 0</div>
+                        <div class="stat-sub">Principal + Penalty payable</div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="table-container" style="border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); overflow: hidden;">
+                    <table class="bank-table">
+                        <thead>
+                            <tr>
+                                <th style="width:30%">Period</th>
+                                <th style="width:35%">Cumulative Outstanding</th>
+                                <th style="width:35%">Penalty Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Official Bank Verification & Signature Block -->
+                <div class="print-signatures-block">
+                    <div class="print-sig-col">
+                        <div class="print-sig-line"></div>
+                        <div class="print-sig-title">Prepared By (Clerk)</div>
+                        <div class="print-sig-sub">RD Deposit Section</div>
+                    </div>
+                    <div class="print-sig-col">
+                        <div class="print-sig-line"></div>
+                        <div class="print-sig-title">Audited & Checked By</div>
+                        <div class="print-sig-sub">Internal Auditor / Accountant</div>
+                    </div>
+                    <div class="print-sig-col">
+                        <div class="print-sig-line"></div>
+                        <div class="print-sig-title">Sanctioned By</div>
+                        <div class="print-sig-sub">Branch Manager</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Initialize
+    window.onload = function() {
+        const d = new Date();
+        const dateString = d.toLocaleDateString('en-GB', { 
+            weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
+        });
+        document.getElementById("displayCurrentDate").value = dateString;
+        document.getElementById("reportDate").innerText = dateString;
+    };
+
+    // Mobile View Switchers
+    function showResultsMobile() {
+        document.body.classList.add('show-results');
+    }
+
+    function showInputs() {
+        document.body.classList.remove('show-results');
+    }
+
+    // Helper to get engine
+    function getLakhpatiEngine() {
+        return (window.BankingCore && window.BankingCore.calculators && window.BankingCore.calculators.lakhpati) || window.BankingLakhpatiEngine;
+    }
+
+    // 2. Dynamic Live Calculation
+    function updateLiveStats() {
+        const openDateInput = document.getElementById("openDate").value;
+        const monthlyInput = document.getElementById("amount").value;
+        const receivedInput = document.getElementById("received").value;
+
+        if (openDateInput && monthlyInput) {
+            const engine = getLakhpatiEngine();
+            const stats = engine.getStats({
+                openDate: openDateInput,
+                monthlyAmount: monthlyInput,
+                receivedAmount: receivedInput,
+                refDate: new Date()
+            });
+
+            document.getElementById("autoExpected").value = BankingCore.formatINR(stats.expectedTotal, { decimals: 0 });
+
+            if (receivedInput !== "") {
+                const skippedDisplay = document.getElementById("calculatedSkipped");
+                if (stats.skippedRaw > 0) {
+                    skippedDisplay.value = `${stats.skippedRaw.toFixed(1)} Months Due`;
+                    skippedDisplay.style.color = "#ef4444";
+                    skippedDisplay.style.backgroundColor = "#fef2f2";
+                } else {
+                    skippedDisplay.value = "Up to Date";
+                    skippedDisplay.style.color = "#10b981";
+                    skippedDisplay.style.backgroundColor = "#ecfdf5";
+                }
+                
+                document.getElementById("skippedValue").value = stats.skippedRounded;
+            }
+        }
+    }
+
+    // Event Listeners
+    document.getElementById("openDate").addEventListener("change", updateLiveStats);
+    document.getElementById("amount").addEventListener("input", updateLiveStats);
+    document.getElementById("received").addEventListener("input", updateLiveStats);
+
+    // 3. Main Calculation
+    function calculateCumulative() {
+        const monthlyAmount = document.getElementById("amount").value;
+        const ratePercent = parseFloat(document.getElementById("rate").value);
+        const skippedCount = parseInt(document.getElementById("skippedValue").value);
+        const openDateInput = document.getElementById("openDate").value;
+        const receivedAmount = document.getElementById("received").value;
+
+        const engine = getLakhpatiEngine();
+        const result = engine.calculate({
+            openDate: openDateInput,
+            monthlyAmount: monthlyAmount,
+            rate: ratePercent,
+            receivedAmount: receivedAmount,
+            skippedCount: isNaN(skippedCount) ? null : skippedCount,
+            refDate: new Date()
+        });
+
+        if (!result.ok) {
+            BankingCore.toast.error(result.error);
+            return;
+        }
+
+        let tableHTML = "";
+        if (result.skippedCount <= 0) {
+            tableHTML = `<tr><td colspan='3' style='text-align:center; padding:40px; color:var(--success); font-weight:600;'>
+                No penalties applicable. Account is up to date!
+            </td></tr>`;
+        } else {
+            result.installments.forEach(item => {
+                const outFmt = BankingCore.formatINR(item.outstanding, { decimals: 0 });
+                const penFmt = BankingCore.formatINR(item.penalty, { decimals: 2 });
+                tableHTML += `
+                    <tr>
+                        <td style="width:30%">${item.title}</td>
+                        <td style="width:35%">${outFmt}</td>
+                        <td style="width:35%; color:var(--danger); font-weight:600;">${penFmt}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        const fmt = n => BankingCore.formatINR(n, { decimals: 0 });
+        const fmt2 = n => BankingCore.formatINR(n, { decimals: 2 });
+
+        // Populate Results
+        document.getElementById("displayExpected").innerText = fmt(result.expectedTotal);
+        document.getElementById("displayPending").innerText = fmt(result.pendingPrincipal);
+        document.getElementById("displayPenalty").innerText = fmt2(result.totalPenalty);
+        document.getElementById("displayTotal").innerText = fmt2(result.grandTotal);
+        document.getElementById("tableBody").innerHTML = tableHTML;
+
+        // Switch Views
+        document.getElementById("placeholder-state").style.display = "none";
+        document.getElementById("result-area").style.display = "flex";
+
+        // Mobile Toggle Trigger
+        showResultsMobile();
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dividend Calculator</title>
+    <meta name="tool-name" content="Dividend">
+    <meta name="tool-icon" content="💰">
+    <meta name="tool-desc" content="Shareholder dividend distribution">
+    <link rel="stylesheet" href="../assets/css/banking-theme.css">
+    <script src="../assets/js/banking-core.js"></script>
+    <script src="../assets/js/calculators/dividend-engine.js"></script>
+    
+    <style>
+        body {
+            padding: 0 16px 20px;
+            margin: 0;
+            background: var(--bg-app);
+            min-height: 100vh;
+        }
+
+        .segment-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .segment-control input[type="radio"]:checked + .segment-btn {
+            background: var(--bank-navy);
+            color: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .segment-control input[value="resigned"]:checked + .segment-btn {
+            background: #991b1b;
+            color: #ffffff;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            background: var(--bg-surface-alt);
+            border-radius: var(--radius-sm);
+            border: 2px dashed var(--border-subtle);
+        }
+
+        .breakdown-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .breakdown-item {
+            background: var(--bg-surface-alt);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .bd-left { display: flex; flex-direction: column; gap: 4px; }
+        .bd-title { font-weight: 700; font-size: 0.92rem; color: var(--text-primary); }
+        .bd-meta { font-size: 0.78rem; color: var(--text-secondary); font-family: 'SF Mono', 'Roboto Mono', Menlo, monospace; }
+        
+        .bd-right { text-align: right; }
+        .bd-amt { font-size: 1.15rem; font-weight: 800; color: var(--bank-navy); }
+        
+        .badge-skip { background: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; }
+        .badge-ok { background: #ecfdf5; color: #065f46; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; }
+
+        .error-toast {
+            color: var(--status-danger);
+            font-size: 0.8rem;
+            margin-top: 6px;
+            font-weight: 600;
+            display: none;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hidden { display: none !important; }
+
+        @media print {
+            @page { margin: 10mm 12mm 10mm 12mm; size: A4 portrait; }
+            body { background: white !important; padding: 0 !important; color: #000000 !important; font-size: 9pt; }
+            .no-print, .btn, .empty-state { display: none !important; }
+            .grid-2 { display: block !important; }
+            .bank-card { border: 1px solid #333 !important; box-shadow: none !important; padding: 10px !important; margin: 0 0 12px !important; background: transparent !important; }
+            .breakdown-item { border: 1px solid #555 !important; background: transparent !important; color: #000 !important; margin-bottom: 6px !important; }
+            .bd-amt { color: #000 !important; font-weight: 800 !important; }
+            .badge-ok, .badge-skip { background: transparent !important; color: #000 !important; border: 1px solid #000 !important; }
+            .stat-card-modern { border: 1.5px solid #000 !important; background: #EAEAEA !important; padding: 10px !important; }
+            .stat-value { color: #000 !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container" style="max-width: 1100px;">
+    <!-- Print Only Header -->
+    <div class="print-only-header">
+        <h2 style="margin: 0; font-size: 1.3rem;">SHARE DIVIDEND PRO-RATA AUDIT STATEMENT</h2>
+        <p style="margin: 3px 0 0; font-size: 0.8rem; color: #555;">Financial Year 2025-2026 Pro-rata Calculation for New, Additional & Resigned Shares</p>
+    </div>
+
+    <div class="grid-2" style="gap: 24px; align-items: start;">
+        <!-- Left: Input Card -->
+        <div class="bank-card no-print">
+            <div class="card-title">
+                <span>⚙️ Member Share Parameters</span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="badge badge-gold">FY 2025-26</span>
+                    <button class="btn btn-outline btn-sm" onclick="window.print()">
+                        🖨️ Print
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label">Member Share Action</label>
+                <div class="segment-control">
+                    <label style="flex:1;">
+                        <input type="radio" name="shareType" value="new" checked onclick="toggleForm()">
+                        <span class="segment-btn">✨ New Share</span>
+                    </label>
+                    <label style="flex:1;">
+                        <input type="radio" name="shareType" value="additional" onclick="toggleForm()">
+                        <span class="segment-btn">➕ Additional</span>
+                    </label>
+                    <label style="flex:1;">
+                        <input type="radio" name="shareType" value="resigned" onclick="toggleForm()">
+                        <span class="segment-btn">🚪 Resigned</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div class="form-group">
+                    <label class="form-label" for="divRate">Dividend Rate (%)</label>
+                    <input type="number" id="divRate" class="form-control" placeholder="e.g. 12" step="0.1">
+                </div>
+                <div class="form-group hidden" id="existingGroup">
+                    <label class="form-label" for="existingAmount">Opening Balance (Apr 1)</label>
+                    <input type="number" id="existingAmount" class="form-control" placeholder="₹ Amount">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label" id="amountLabel" for="actionAmount">Allotment Amount (₹)</label>
+                <input type="number" id="actionAmount" class="form-control" placeholder="Enter share capital amount">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label class="form-label" id="dateLabel" for="actionDate">Allotment Date</label>
+                <input type="date" id="actionDate" class="form-control">
+                <div id="dateError" class="error-toast">
+                    ⚠️ <span>Date must be within FY 2025-2026 (01/04/2025 – 31/03/2026)</span>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="calculateDividend()" style="width: 100%; padding: 12px; font-weight: 700;">
+                ⚡ Calculate Dividend Breakdown
+            </button>
+        </div>
+
+        <!-- Right: Results Card -->
+        <div class="bank-card">
+            <div class="card-title">
+                <span>📊 Dividend Breakdown & Payout</span>
+                <span class="badge badge-navy">Audit Trail</span>
+            </div>
+
+            <div id="emptyState" class="empty-state">
+                <div style="font-size: 2rem; margin-bottom: 8px;">🧮</div>
+                <strong>No Calculation Yet</strong>
+                <p style="margin: 4px 0 0 0; font-size: 0.85rem;">Select share action and enter parameters on the left to calculate pro-rata dividend.</p>
+            </div>
+
+            <div id="resultContent" style="display: none; flex-direction: column;">
+                <div class="stat-card-modern stat-card-gold" style="margin-bottom: 16px;">
+                    <div class="stat-label">Total Payable Dividend</div>
+                    <div class="stat-value" id="finalTotal" style="color: #92400e;">₹ 0.00</div>
+                    <div class="stat-sub">Net credited amount for FY 2025-26</div>
+                </div>
+
+                <div class="breakdown-list" id="breakdownList"></div>
+
+                <p style="text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 16px; margin-bottom: 0;">
+                    * Notice: As per society bylaws, the calendar month of allotment or resignation is excluded from interest calculation.
+                </p>
+
+                <!-- Official Bank Verification & Signature Block -->
+                <div class="print-signatures-block">
+                    <div class="print-sig-col">
+                        <div class="print-sig-line"></div>
+                        <div class="print-sig-title">Prepared By</div>
+                        <div class="print-sig-sub">Share Department Clerk</div>
+                    </div>
+                    <div class="print-sig-col">
+                        <div class="print-sig-line"></div>
+                        <div class="print-sig-title">Verified By</div>
+                        <div class="print-sig-sub">Internal Auditor / Accountant</div>
+                    </div>
+                    <div class="print-sig-col">
+                        <div class="print-sig-line"></div>
+                        <div class="print-sig-title">Approved By</div>
+                        <div class="print-sig-sub">Secretary / Manager</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleForm() {
+        const type = document.querySelector('input[name="shareType"]:checked').value;
+        const existingGroup = document.getElementById('existingGroup');
+        const amountLabel = document.getElementById('amountLabel');
+        const dateLabel = document.getElementById('dateLabel');
+
+        // Reset UI
+        document.getElementById('emptyState').style.display = 'block';
+        document.getElementById('resultContent').style.display = 'none';
+
+        if (type === 'additional') {
+            existingGroup.classList.remove('hidden');
+            amountLabel.innerText = "Additional Amount";
+            dateLabel.innerText = "Allotment Date";
+        } else if (type === 'resigned') {
+            existingGroup.classList.add('hidden');
+            amountLabel.innerText = "Total Share Balance";
+            dateLabel.innerText = "Resignation Date";
+        } else {
+            existingGroup.classList.add('hidden');
+            amountLabel.innerText = "Allotment Amount";
+            dateLabel.innerText = "Allotment Date";
+        }
+    }
+
+    function calculateDividend() {
+        // UI Reset
+        const dateInput = document.getElementById('actionDate');
+        const dateError = document.getElementById('dateError');
+        dateInput.classList.remove('error');
+        dateError.style.display = 'none';
+
+        // Get Values
+        const rate = parseFloat(document.getElementById('divRate').value);
+        const type = document.querySelector('input[name="shareType"]:checked').value;
+        const amount = parseFloat(document.getElementById('actionAmount').value);
+        const dateVal = dateInput.value;
+        const existingAmt = parseFloat(document.getElementById('existingAmount').value) || 0;
+
+        // Basic Validation
+        if (!dateVal || isNaN(amount) || isNaN(rate)) {
+            if (window.BankingCore) BankingCore.toast.error("Please fill all required dividend fields.");
+            else alert("Please fill all fields.");
+            return;
+        }
+
+        // Delegate to pure Dividend Engine
+        const engine = (window.BankingCore && window.BankingCore.calculators && window.BankingCore.calculators.dividend) || window.BankingDividendEngine;
+        const result = engine.calculate({
+            type: type,
+            rate: rate,
+            amount: amount,
+            actionDate: dateVal,
+            existingAmount: existingAmt
+        });
+
+        if (!result.ok) {
+            if (window.BankingCore) BankingCore.toast.error(result.error);
+            else alert(result.error);
+            return;
+        }
+
+        // Render Results
+        const fmt = (n) => BankingCore ? BankingCore.formatINR(n, { showSymbol: false }) : Number(n).toFixed(2);
+        const list = document.getElementById('breakdownList');
+        list.innerHTML = '';
+
+        result.items.forEach(item => {
+            if (item.type === 'opening') {
+                list.innerHTML += `
+                <div class="breakdown-item">
+                    <div class="bd-left">
+                        <div class="bd-title">${item.title}</div>
+                        <div class="bd-meta">Principal: ₹${fmt(item.principal)}</div>
+                        <span class="badge badge-ok" style="width:fit-content">${item.periodDesc}</span>
+                    </div>
+                    <div class="bd-right">
+                        <div class="bd-amt">₹ ${fmt(item.interest)}</div>
+                    </div>
+                </div>`;
+            } else {
+                list.innerHTML += `
+                <div class="breakdown-item">
+                    <div class="bd-left">
+                        <div class="bd-title">${item.title}</div>
+                        <div class="bd-meta">Principal: ₹${fmt(item.principal)}</div>
+                        <div class="bd-meta">Formula: ${item.formula}</div>
+                        <div style="margin-top:4px;">
+                            <span class="badge badge-skip">Skip: ${item.skipMonth}</span>
+                            <span class="badge badge-ok">${item.months} Months</span>
+                        </div>
+                    </div>
+                    <div class="bd-right">
+                        <div class="bd-amt">₹ ${fmt(item.interest)}</div>
+                        <div class="bd-meta">${item.periodDesc}</div>
+                    </div>
+                </div>`;
+            }
+        });
+
+        document.getElementById('finalTotal').innerText = "₹ " + fmt(result.totalDividend);
+        
+        // Show Right Panel
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('resultContent').style.display = 'flex';
+    }
+</script>
+
+</body>
+</html>

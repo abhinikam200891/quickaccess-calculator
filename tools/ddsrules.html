@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDS Interest Rules & Criteria Guide</title>
+    <meta name="tool-name" content="DDS Rules & Logic">
+    <meta name="tool-icon" content="📜">
+    <meta name="tool-desc" content="Simple guide to Daily Deposit Scheme (Pigmy) interest rules and calculation criteria">
+    <meta name="tool-hidden" content="true">
+    
+    <link rel="stylesheet" href="../assets/css/banking-theme.css">
+    <script src="../assets/js/banking-core.js"></script>
+    <script src="../assets/js/calculators/dds-engine.js"></script>
+
+    <style>
+        body {
+            padding: 0 16px 30px;
+            margin: 0;
+            background: var(--bg-app);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .header-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--bank-navy);
+            margin: 0 0 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-sub {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .rule-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 18px 22px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-xs);
+        }
+
+        .rule-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .rule-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--bank-navy);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rule-text {
+            font-size: 0.92rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin: 0 0 10px;
+        }
+
+        .rule-list {
+            margin: 0 0 10px 20px;
+            font-size: 0.9rem;
+            line-height: 1.65;
+            color: var(--text-secondary);
+        }
+
+        .rule-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 14px;
+            margin-top: 12px;
+        }
+
+        .item-box {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 14px 18px;
+        }
+
+        .item-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .item-val {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--bank-navy);
+        }
+
+        .item-sub {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            line-height: 1.45;
+        }
+
+        .tip-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            margin-top: 10px;
+            font-size: 0.88rem;
+            color: #1e40af;
+            line-height: 1.5;
+        }
+
+        .rule-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            margin-top: 10px;
+        }
+
+        .rule-table th {
+            background: var(--bg-subtle);
+            padding: 9px 12px;
+            text-align: left;
+            border: 1px solid var(--border-subtle);
+            color: var(--bank-navy);
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .rule-table td {
+            padding: 9px 12px;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+        }
+
+        .rule-table tr:nth-child(even) td {
+            background: #fafafa;
+        }
+
+        /* Checker Widget */
+        .checker-card {
+            background: #ffffff;
+            border: 2px solid #3b82f6;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .checker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 14px;
+            align-items: end;
+        }
+
+        .checker-results {
+            background: #f8fafc;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 14px 18px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        /* Badges */
+        .badge-green { background: #d1fae5; color: #065f46; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full); font-size: 0.75rem; }
+        .badge-red { background: #fee2e2; color: #991b1b; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full); font-size: 0.75rem; }
+        .badge-gold { background: #fef3c7; color: #92400e; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full); font-size: 0.75rem; }
+        .badge-blue { background: #dbeafe; color: #1e40af; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full); font-size: 0.75rem; }
+
+        @media print {
+            body { background: #fff !important; padding: 0 !important; font-size: 9pt; }
+            .no-print, .checker-card, button, a.btn { display: none !important; }
+            .rule-card { box-shadow: none !important; border: 1px solid #333 !important; break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container" style="max-width: 1200px;">
+
+    <!-- Top Header -->
+    <div class="header-card">
+        <div>
+            <h1 class="header-title">
+                <span>📜 Daily Deposit Scheme (DDS) Interest Rules</span>
+            </h1>
+            <p class="header-sub">Simple guide to how daily pigmy deposit interest is calculated</p>
+        </div>
+        <div class="no-print" style="display: flex; gap: 8px;">
+            <a href="dds.html" class="btn btn-primary btn-sm" onclick="goBackToCalculator(event)" style="font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                Back to 🧮 DDS Interest Calculator
+            </a>
+            <button class="btn btn-outline btn-sm" onclick="window.print()">
+                🖨️ Print Rules
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Rule Checker Widget -->
+    <div class="checker-card no-print">
+        <div style="font-weight: 700; font-size: 1rem; color: var(--bank-navy); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+            <span>⚡ Interactive Account Checker</span>
+            <small style="color: var(--text-muted); font-weight: normal;">Select dates to see qualification, interest rate & limits</small>
+        </div>
+        <div class="checker-grid">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="chkOpen" style="font-size: 0.8rem;">1. Account Opening Date</label>
+                <input type="date" id="chkOpen" class="form-control" value="2024-01-01" onchange="runCheck()">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="chkWithdraw" style="font-size: 0.8rem;">2. Withdrawal Date</label>
+                <input type="date" id="chkWithdraw" class="form-control" value="2024-07-02" onchange="runCheck()">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="chkLimit" style="font-size: 0.8rem;">3. Daily Limit (₹)</label>
+                <input type="number" id="chkLimit" class="form-control" value="1000" onchange="runCheck()">
+            </div>
+        </div>
+
+        <div class="checker-results">
+            <div>
+                <div class="item-label">Account Duration</div>
+                <div class="item-val" id="chkDurText" style="color: #1e40af;">-</div>
+                <div id="chkDurBadge" style="margin-top: 4px;">-</div>
+            </div>
+            <div>
+                <div class="item-label">Interest Rate</div>
+                <div class="item-val" id="chkRateText" style="color: #b45309;">-</div>
+                <div id="chkRateBadge" style="margin-top: 4px;">-</div>
+            </div>
+            <div>
+                <div class="item-label">3% Deduction Window Starts</div>
+                <div class="item-val" id="chkCutoffText" style="color: #dc2626;">-</div>
+                <div class="item-sub" style="font-size: 0.75rem;">Last 6 months before withdrawal</div>
+            </div>
+            <div>
+                <div class="item-label">Monthly Limit in 30-Day Month</div>
+                <div class="item-val" id="chkCapText" style="color: #065f46;">-</div>
+                <div class="item-sub" style="font-size: 0.75rem;">Calculated with 31 days benefit</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rule 1: Minimum Duration Policy -->
+    <div class="rule-card" style="border-left: 4px solid var(--status-danger);">
+        <div class="rule-header">
+            <h2 class="rule-title">⏳ 1. Minimum Time Required (6 Months & 1 Day)</h2>
+            <span class="badge-red">Eligibility Rule</span>
+        </div>
+        <p class="rule-text">
+            To earn interest on a Daily Deposit account, the account must remain open for <strong>at least 6 months and 1 day</strong>.
+        </p>
+        <table class="rule-table">
+            <thead>
+                <tr>
+                    <th>Completed Time</th>
+                    <th>Status</th>
+                    <th>Interest Rate</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Less than 6 Months</strong></td>
+                    <td><span class="badge-red">Not Eligible</span></td>
+                    <td><strong>0.00%</strong></td>
+                    <td>Closed too early. No interest is paid.</td>
+                </tr>
+                <tr>
+                    <td><strong>Exactly 6 Months & 0 Days</strong></td>
+                    <td><span class="badge-red">Not Eligible</span></td>
+                    <td><strong>0.00%</strong></td>
+                    <td>Needs 1 more day to qualify for interest.</td>
+                </tr>
+                <tr>
+                    <td><strong>6 Months & 1 Day or more</strong></td>
+                    <td><span class="badge-green">Eligible</span></td>
+                    <td><strong>2.00% or 5.00%</strong></td>
+                    <td>Qualifies for full interest calculation.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Rule 2: Interest Rate Slabs -->
+    <div class="rule-card" style="border-left: 4px solid var(--bank-gold);">
+        <div class="rule-header">
+            <h2 class="rule-title">📈 2. Interest Rate (2% vs 5%)</h2>
+            <span class="badge-gold">Rate Slabs</span>
+        </div>
+        <p class="rule-text">
+            The interest rate you receive depends on how long your account has been active:
+        </p>
+        <div class="rule-grid">
+            <div class="item-box" style="border-color: #bfdbfe;">
+                <div class="item-label" style="color: #1e40af;">Up to 1 Year (&le; 12 Months)</div>
+                <div class="item-val" style="color: #1d4ed8;">2.00% per year</div>
+                <div class="item-sub">For accounts open between <strong>6 months 1 day</strong> and <strong>12 months</strong>.</div>
+            </div>
+            <div class="item-box" style="border-color: #fde68a;">
+                <div class="item-label" style="color: #b45309;">More than 1 Year (&gt; 12 Months)</div>
+                <div class="item-val" style="color: #b45309;">5.00% per year</div>
+                <div class="item-sub">For accounts open for <strong>12 months and 1 day</strong> or longer.</div>
+            </div>
+        </div>
+        <div class="tip-box">
+            💡 <strong>Helpful Tip:</strong> An account closed at exactly 12 months earns <strong>2.00%</strong>. If kept for just <strong>1 extra day</strong> (12 months and 1 day), the rate increases to <strong>5.00%</strong> for the entire duration!
+        </div>
+    </div>
+
+    <!-- Rule 3: Monthly Limit & The +1 Day Benefit Cap -->
+    <div class="rule-card" style="border-left: 4px solid var(--status-success);">
+        <div class="rule-header">
+            <h2 class="rule-title">🛡️ 3. Monthly Limits & Extra 1-Day Bonus</h2>
+            <span class="badge-green">Deposit Limits</span>
+        </div>
+        <p class="rule-text">
+            Every account has a daily deposit limit agreed at opening (for example, ₹1,000 per day):
+        </p>
+        <ul class="rule-list">
+            <li><strong>Normal Monthly Limit:</strong> <code>Daily Limit &times; Number of days in that month</code>.</li>
+            <li><strong>Extra 1-Day Bonus in 30-Day Months:</strong> In months that have 30 days (April, June, September, November), the bank gives you the benefit of <strong>31 days</strong> (<code>Daily Limit &times; 31</code>) so you can earn more interest.</li>
+            <li><strong>Extra Deposits:</strong> Any money deposited above the monthly limit does not earn interest for that month.</li>
+        </ul>
+    </div>
+
+    <!-- Rule 4: 3% Agent Commission Deduction -->
+    <div class="rule-card" style="border-left: 4px solid var(--status-danger);">
+        <div class="rule-header">
+            <h2 class="rule-title">✂️ 4. 3% Agent Commission Recovery</h2>
+            <span class="badge-red">Deduction Rule</span>
+        </div>
+        <p class="rule-text">
+            The bank pays a 3% commission to the daily collection agent. If you deposit extra money beyond your monthly limit, a <strong>3% deduction</strong> is taken from your interest on that extra amount.
+        </p>
+        <p class="rule-text">
+            <strong>Applies only to the last 6 months:</strong> This deduction is only made on extra deposits made during the <strong>last 6 months before withdrawal</strong>. Extra deposits made earlier than the last 6 months are completely free of deduction (no penalty).
+        </p>
+        <table class="rule-table">
+            <thead>
+                <tr>
+                    <th>When Extra Deposit Was Made</th>
+                    <th>Is 3% Commission Deducted?</th>
+                    <th>Rule Explanation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Earlier than the last 6 months</strong></td>
+                    <td><span class="badge-green">NO (₹0 Deduction)</span></td>
+                    <td>Older savings are protected; no commission is deducted.</td>
+                </tr>
+                <tr>
+                    <td><strong>During the last 6 months</strong></td>
+                    <td><span class="badge-red">YES (3% on extra amount)</span></td>
+                    <td>3% is recovered from interest (<code>Extra Amount &times; 3%</code>).</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Rule 5: Missing Months (Auto-Fill) -->
+    <div class="rule-card" style="border-left: 4px solid #8b5cf6;">
+        <div class="rule-header">
+            <h2 class="rule-title">🔄 5. Missing Months Are Carried Forward Automatically</h2>
+            <span class="badge-blue">Continuous Balance</span>
+        </div>
+        <p class="rule-text">
+            If you do not make deposits in some months, the system automatically carries your previous closing balance forward with ₹0 deposit. This ensures your monthly interest calculation continues smoothly up to the withdrawal date without any missing months.
+        </p>
+    </div>
+
+    <!-- Rule 6: Final Two Months (Closing Adjustments) -->
+    <div class="rule-card" style="border-left: 4px solid var(--bank-navy);">
+        <div class="rule-header">
+            <h2 class="rule-title">⚖️ 6. How the Last Two Months Are Handled</h2>
+            <span class="badge-blue">Closing Rules</span>
+        </div>
+        <p class="rule-text">
+            When you close the account, the interest for the final months is adjusted as follows:
+        </p>
+        <ul class="rule-list">
+            <li><strong>Closing Month (Withdrawal Month):</strong> <strong>0% balance</strong> &mdash; No interest is paid for the month in which the account is closed.</li>
+            <li><strong>Month Before Closing:</strong> Interest is calculated on <strong>half (50%) of the balance</strong>.</li>
+            <li><strong>All Earlier Months:</strong> Earn interest on the <strong>full (100%) balance</strong>.</li>
+            <li><strong>Mid-term Withdrawals:</strong> If you withdrew any money before closing, that withdrawal amount is subtracted from your balance.</li>
+        </ul>
+    </div>
+
+    <!-- Rule 7: How the Final Amount is Calculated -->
+    <div class="rule-card" style="border-left: 4px solid var(--bank-blue);">
+        <div class="rule-header">
+            <h2 class="rule-title">📐 7. Simple Interest Calculation Summary</h2>
+            <span class="badge-blue">Formula</span>
+        </div>
+        <p class="rule-text">
+            The final interest payment is calculated in three easy steps:
+        </p>
+        <div class="item-box" style="margin-top: 8px;">
+            <div style="font-size: 0.92rem; line-height: 1.8; color: var(--bank-navy);">
+                <strong>Step 1:</strong> Each month's interest = <code>(Adjusted Balance &times; Interest Rate) &divide; 1200</code><br>
+                <strong>Step 2:</strong> Total Gross Interest = Add up interest from all months + opening balance interest<br>
+                <strong>Step 3:</strong> <strong>Final Amount Paid = Total Gross Interest &minus; 3% Commission (if any)</strong>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Interactive Checker Script -->
+<script>
+    function getEngine() {
+        return (window.BankingCore && window.BankingCore.calculators && window.BankingCore.calculators.dds) || window.BankingDdsEngine;
+    }
+
+    function runCheck() {
+        const engine = getEngine();
+        const openStr = document.getElementById('chkOpen').value;
+        const withStr = document.getElementById('chkWithdraw').value;
+        const limit = Number(document.getElementById('chkLimit').value) || 1000;
+
+        if (!openStr || !withStr) return;
+
+        const openDate = new Date(openStr);
+        const withdrawDate = new Date(withStr);
+
+        let dur;
+        if (engine && engine.calcDuration) {
+            dur = engine.calcDuration(openStr, withdrawDate);
+        } else {
+            let y = withdrawDate.getFullYear() - openDate.getFullYear();
+            let m = withdrawDate.getMonth() - openDate.getMonth();
+            let d = withdrawDate.getDate() - openDate.getDate();
+            if (d < 0) {
+                m--;
+                d += new Date(withdrawDate.getFullYear(), withdrawDate.getMonth(), 0).getDate();
+            }
+            if (m < 0) {
+                y--;
+                m += 12;
+            }
+            const totalMonths = (y * 12) + m;
+            dur = { ok: true, totalMonths, days: d, text: `${totalMonths} Mths, ${d} Days` };
+        }
+
+        const durEl = document.getElementById('chkDurText');
+        const durBadge = document.getElementById('chkDurBadge');
+        const rateEl = document.getElementById('chkRateText');
+        const rateBadge = document.getElementById('chkRateBadge');
+        const cutoffEl = document.getElementById('chkCutoffText');
+        const capEl = document.getElementById('chkCapText');
+
+        if (!dur.ok) {
+            durEl.innerText = "Error";
+            durBadge.innerHTML = `<span class="badge-red">${dur.msg}</span>`;
+            rateEl.innerText = "-";
+            rateBadge.innerHTML = "-";
+            return;
+        }
+
+        durEl.innerText = `${dur.totalMonths} Months, ${dur.days} Days`;
+
+        // Policy Check
+        const isValid = (dur.totalMonths > 6) || (dur.totalMonths === 6 && dur.days >= 1);
+        if (isValid) {
+            durBadge.innerHTML = `<span class="badge-green">Eligible (&ge; 6 Months & 1 Day)</span>`;
+        } else {
+            durBadge.innerHTML = `<span class="badge-red">Not Eligible (&lt; 6 Months & 1 Day)</span>`;
+        }
+
+        // Rate Check
+        const isLong = (dur.totalMonths > 12) || (dur.totalMonths === 12 && dur.days > 0);
+        const rate = isValid ? (isLong ? 5.0 : 2.0) : 0.0;
+        rateEl.innerText = `${rate.toFixed(2)}% per year`;
+
+        if (!isValid) {
+            rateBadge.innerHTML = `<span class="badge-red">0% (Closed too early)</span>`;
+        } else if (isLong) {
+            rateBadge.innerHTML = `<span class="badge-gold">More than 1 year</span>`;
+        } else {
+            rateBadge.innerHTML = `<span class="badge-blue">Up to 1 year</span>`;
+        }
+
+        // Cutoff Date (Trailing 6 months)
+        const cutoffDate = new Date(withdrawDate.getFullYear(), withdrawDate.getMonth() - 5, 1);
+        cutoffEl.innerText = cutoffDate.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+
+        // 30-day Cap with 31 days benefit
+        const cap30 = limit * 31;
+        capEl.innerText = `₹${cap30.toLocaleString('en-IN')}`;
+    }
+
+    function goBackToCalculator(event) {
+        window.location.href = 'dds.html';
+    }
+
+    function notifyParentSubpage() {
+        try {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'QUICKACCESS_SUBPAGE_LOADED', toolId: 'dds', page: 'ddsrules.html' }, '*');
+            }
+        } catch(e) {}
+    }
+
+    notifyParentSubpage();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        notifyParentSubpage();
+        runCheck();
+    });
+</script>
+
+</body>
+</html>
