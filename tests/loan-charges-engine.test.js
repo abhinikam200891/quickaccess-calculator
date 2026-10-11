@@ -110,3 +110,46 @@ test('null label from the database does not crash', () => {
   assert.equal(f.label, '');
   assert.equal(Engine.isTotal(f), false);
 });
+
+// v2 layout (loan_scheme_fields): named keys, options array, in_total flags, no TOTAL row
+const TOP_UP_V2 = [
+  { key: 'amount', label: 'LOAN AMOUNT', kind: 'input', in_total: false },
+  { key: 'loan_form', label: 'LOAN FORM', kind: 'output', formula: '250', in_total: true },
+  { key: 'gst_loan_form', label: 'GST 18% ON LOAN FORM', kind: 'output', formula: 'loan_form*18/100', in_total: true },
+  { key: 'lpc', label: 'LPC 1%', kind: 'output', formula: 'amount*1%', in_total: true },
+  { key: 'gst_lpc', label: 'GST 18% ON LPC', kind: 'output', formula: 'gst_lpc_base*18/100', in_total: true },
+  { key: 'gst_lpc_base', label: 'LPC FOR GST', kind: 'output', formula: 'lpc', in_total: false },
+  { key: 'notary', label: 'NOTARY CHARGES', kind: 'input', default_value: 300, in_total: true }
+];
+
+test('v2: named keys, in_total flags and defaults', () => {
+  const s = Engine.compile(TOP_UP_V2);
+  assert.deepEqual(s.errors, {});
+  assert.equal(Engine.initialValue(s.fields[6]), 300);
+  const r = s.evaluate({ 0: 1000000, 6: 300 });
+  // loan amount is not part of the deductions
+  assert.equal(r.total, 250 + 45 + 10000 + 1800 + 300);
+  assert.equal(s.fields.some(Engine.isTotal), false);
+});
+
+test('v2: cell positions are not valid references', () => {
+  const s = Engine.compile([
+    { key: 'amount', label: 'AMOUNT', kind: 'input' },
+    { key: 'fee', label: 'FEE', kind: 'output', formula: 'B2*2' }
+  ]);
+  assert.match(s.errors[1], /Unknown reference B2/);
+});
+
+test('v2: select options come from the options array', () => {
+  const f = Engine.normalizeField({ key: 'mortgage_type', label: 'MORTGAGE TYPE', kind: 'select',
+    options: [{ label: 'REGISTER', value: 0 }, { label: 'EQUITABLE', value: 1 }] });
+  assert.deepEqual(Engine.parseOptions(f).map(o => o.value), [0, 1]);
+  const s = Engine.compile([
+    f,
+    { key: 'amount', label: 'AMOUNT', kind: 'input' },
+    { key: 'stamp_duty', label: 'STAMP DUTY', kind: 'output', in_total: true,
+      formula: 'IF(AND(mortgage_type=1, amount<=500000), amount*0.1/100, amount*0.3/100)' }
+  ]);
+  assert.equal(s.evaluate({ 0: 1, 1: 400000 }).total, 400);
+  assert.equal(s.evaluate({ 0: 0, 1: 400000 }).total, 1200);
+});

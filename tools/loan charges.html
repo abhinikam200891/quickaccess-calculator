@@ -552,11 +552,15 @@
     const Engine = window.BankingLoanChargesEngine;
 
     // State
+    let schemes = [];                      // [{ id, title, fields|null }] — fields null = load on demand (v1)
     let currentScheme = null;              // compiled scheme from the engine
     let currentViewMode = 'split';         // 'split' | 'matrix'
 
     // =================================================================
-    // INITIALIZATION & PRODUCT LOADING
+    // INITIALIZATION & SCHEME LOADING
+    // v2 (loan_schemes + loan_scheme_fields) arrives in one request with every
+    // field, so all schemes work offline after one visit. Until the v2 tables
+    // exist, the old loan_products / loan_fields tables are used.
     // =================================================================
     window.onload = function () {
         initProducts(false);
@@ -580,26 +584,34 @@
         return new Date(t).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
     }
 
+    // Cached scheme list; also accepts the plain name list cached by earlier versions
+    function cachedSchemes(maxAgeMs) {
+        const c = cacheGet('schemes', maxAgeMs) || cacheGet('products', maxAgeMs);
+        if (!c || !Array.isArray(c.d) || c.d.length === 0) return null;
+        const list = c.d.map(s => typeof s === 'string' ? { id: s, title: s, fields: null } : s);
+        return { t: c.t, list: list };
+    }
+
     function initProducts(forceRefresh) {
         toggleLoader(true);
         if (forceRefresh) configFreshAfter = Date.now();
 
         if (!forceRefresh) {
-            const c = cacheGet('products', FRESH_MS);
-            if (c && Array.isArray(c.d) && c.d.length > 0) {
-                populateProductDropdown(c.d);
-                setConnStatus('cached', c.d.length, c.t);
+            const c = cachedSchemes(FRESH_MS);
+            if (c) {
+                populateProductDropdown(c.list);
+                setConnStatus('cached', c.list.length, c.t);
                 toggleLoader(false);
                 return;
             }
         }
 
-        fetchData("getProducts", null, function (data) {
+        fetchSchemes(function (list) {
             toggleLoader(false);
-            if (Array.isArray(data) && data.length > 0) {
-                cacheSet('products', data);
-                populateProductDropdown(data);
-                setConnStatus('online', data.length, Date.now());
+            if (list.length > 0) {
+                cacheSet('schemes', list);
+                populateProductDropdown(list);
+                setConnStatus('online', list.length, Date.now());
                 showStatus("Connected to Live Database ✓", "success");
             } else {
                 handleFetchProductsFailure("No active schemes found in database.");
@@ -644,37 +656,39 @@
         console.warn("Scheme list load failed:", errMsg);
 
         // Fall back to the last successfully synced list, whatever its age
-        const c = cacheGet('products');
-        if (c && Array.isArray(c.d) && c.d.length > 0) {
-            populateProductDropdown(c.d);
-            setConnStatus('cached', c.d.length, c.t);
+        const c = cachedSchemes();
+        if (c) {
+            populateProductDropdown(c.list);
+            setConnStatus('cached', c.list.length, c.t);
             showStatus("Offline: using schemes last synced " + fmtSynced(c.t), "info");
             return;
         }
 
         const select = document.getElementById("productSelect");
         select.innerHTML = '<option value="">No schemes available offline</option>';
+        schemes = [];
         setConnStatus('offline');
         showOfflineCard(errMsg);
     }
 
-    function populateProductDropdown(products) {
+    function populateProductDropdown(list) {
+        schemes = list;
         const select = document.getElementById("productSelect");
         const previous = select.value;
         select.innerHTML = '';
 
-        products.forEach(p => {
+        list.forEach(s => {
             const opt = document.createElement("option");
-            opt.value = p;
-            opt.textContent = p;
+            opt.value = s.id;
+            opt.textContent = s.title;
             select.appendChild(opt);
         });
 
         document.getElementById('offline-state').style.display = 'none';
 
         // Keep the scheme the user was on (e.g. after Refresh), else show the first one
-        if (products.length > 0) {
-            select.value = products.includes(previous) ? previous : products[0];
+        if (list.length > 0) {
+            select.value = list.some(s => s.id === previous) ? previous : list[0].id;
             loadProductConfig();
         }
     }
@@ -683,10 +697,11 @@
     // LOAD SCHEME CONFIGURATION
     // =================================================================
     function loadProductConfig() {
-        const product = document.getElementById("productSelect").value;
+        const id = document.getElementById("productSelect").value;
+        const scheme = schemes.find(s => s.id === id);
         const formContainer = document.getElementById("dynamic-form");
 
-        if (!product) {
+        if (!scheme) {
             document.getElementById("offline-state").style.display = 'none';
             formContainer.style.display = 'none';
             formContainer.innerHTML = '';
@@ -694,8 +709,14 @@
             return;
         }
 
-        // Fresh cache (<10 min, and not older than last manual reconnect)
-        const cacheKey = 'cfg:' + product;
+        // v2: every field arrived with the scheme list
+        if (scheme.fields) {
+            applyScheme(scheme.fields);
+            return;
+        }
+
+        // v1: fields are fetched per scheme. Fresh cache (<10 min, and not older than last manual reconnect)
+        const cacheKey = 'cfg:' + scheme.id;
         const c = cacheGet(cacheKey, FRESH_MS);
         if (c && c.t > configFreshAfter && Array.isArray(c.d) && c.d.length > 0) {
             applyScheme(c.d);
@@ -703,14 +724,14 @@
         }
 
         toggleLoader(true);
-        fetchData("getConfig", product, function (config) {
+        fetchV1Fields(scheme.id, function (config) {
             toggleLoader(false);
-            if (Array.isArray(config) && config.length > 0) {
+            if (config.length > 0) {
                 cacheSet(cacheKey, config);
                 applyScheme(config);
             } else {
                 showStatus("Error: No fields configured for this scheme", "error");
-                showOfflineCard("No fields configured for " + product + ".");
+                showOfflineCard("No fields configured for " + scheme.title + ".");
             }
         }, function (errMsg) {
             toggleLoader(false);
@@ -776,6 +797,8 @@
         const rightPanel = buildPanel('⚡ Statutory Fees & Deductions', outputFields.length + ' Deductions', outputFields, fields);
         if (totalFieldIndex !== -1) {
             rightPanel.querySelector('.panel-fields').appendChild(createFieldRow(fields[totalFieldIndex], totalFieldIndex, true));
+        } else if (hasComputedTotal()) {
+            rightPanel.querySelector('.panel-fields').appendChild(createComputedTotalRow());
         }
         splitWrapper.appendChild(rightPanel);
         container.appendChild(splitWrapper);
@@ -806,7 +829,19 @@
         fields.forEach((field, index) => {
             matrixWrapper.appendChild(createFieldRow(field, index, Engine.isTotal(field)));
         });
+        if (hasComputedTotal()) matrixWrapper.appendChild(createComputedTotalRow());
         container.appendChild(matrixWrapper);
+    }
+
+    // v2 schemes have no TOTAL row; the total is the sum of fields marked in_total
+    function hasComputedTotal() {
+        return currentScheme.fields.some(f => f.inTotal !== undefined);
+    }
+
+    function createComputedTotalRow() {
+        const row = createFieldRow({ label: 'TOTAL DEDUCTIONS', type: 'output', formula: '' }, 'total', true);
+        row.title = 'Sum of: ' + currentScheme.fields.filter(f => f.inTotal).map(f => f.label).join(', ');
+        return row;
     }
 
     // Helper: Create a single compact field row
@@ -952,30 +987,18 @@
             el.title = err ? 'Formula error: ' + err + '  [' + field.formula + ']' : '';
             el.style.borderColor = err ? '#F43F5E' : '';
         });
+
+        const totalEl = document.getElementById("field_total");
+        if (totalEl) totalEl.value = BankingCore.formatINR(result.total || 0, { showSymbol: false, decimals: 2 });
     }
 
     // =================================================================
     // FETCH DATA — Supabase REST (PostgREST)
-    //   getProducts -> ["Scheme A", "Scheme B", ...]
-    //   getConfig   -> [{label, type, formula, defaultValue?}, ...]
     // =================================================================
-    function fetchData(action, product, onSuccess, onError) {
-        let path, shape;
-        if (action === "getProducts") {
-            path = "/rest/v1/loan_products?select=name&active=eq.true&order=sort_order.asc,name.asc";
-            shape = rows => rows.map(r => r.name);
-        } else if (action === "getConfig") {
-            path = "/rest/v1/loan_fields?select=label,type,formula,default_value&product=eq." +
-                   encodeURIComponent(product) + "&order=sort_order.asc";
-            shape = rows => rows.map(Engine.normalizeField);
-        } else {
-            onError("Unknown action: " + action);
-            return;
-        }
-
+    function restGet(path) {
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
-        fetch(SUPABASE_URL + path, {
+        return fetch(SUPABASE_URL + path, {
             headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, Accept: "application/json" },
             signal: ctrl.signal,
             cache: "no-store"
@@ -988,16 +1011,43 @@
                 throw e;
             });
         })
-        .then(rows => { clearTimeout(timer); onSuccess(shape(rows)); })
-        .catch(err => {
-            clearTimeout(timer);
-            let msg;
-            if (err && err.name === 'AbortError') msg = "Connection timed out.";
-            else if (err && (err.status === 401 || err.status === 403)) msg = "Access denied (check Supabase key / RLS policy).";
-            else if (err && err.status) msg = err.message;
-            else msg = "Network error — server unreachable or blocked by firewall.";
-            onError(msg);
-        });
+        .finally(() => clearTimeout(timer));
+    }
+
+    function describeError(err) {
+        if (err && err.name === 'AbortError') return "Connection timed out.";
+        if (err && (err.status === 401 || err.status === 403)) return "Access denied (check Supabase key / RLS policy).";
+        if (err && err.status) return err.message;
+        return "Network error — server unreachable or blocked by firewall.";
+    }
+
+    /** Scheme list as [{ id, title, fields }]; v1 entries have fields = null. */
+    function fetchSchemes(onSuccess, onError) {
+        const v2 = "/rest/v1/loan_schemes?select=code,name,loan_scheme_fields(key,label,kind,formula,default_value,options,in_total,sort_order)" +
+                   "&order=sort_order.asc,name.asc&loan_scheme_fields.order=sort_order.asc";
+        restGet(v2)
+            .then(rows => rows.map(r => ({
+                id: r.code,
+                title: '(' + r.code + ') ' + r.name,
+                fields: (r.loan_scheme_fields || []).map(Engine.normalizeField)
+            })))
+            .catch(err => {
+                // 404 = v2 tables not created yet: use the original import
+                if (err && err.status === 404) {
+                    return restGet("/rest/v1/loan_products?select=name&active=eq.true&order=sort_order.asc,name.asc")
+                        .then(rows => rows.map(r => ({ id: r.name, title: r.name, fields: null })));
+                }
+                throw err;
+            })
+            .then(onSuccess, err => onError(describeError(err)));
+    }
+
+    /** v1 only: fields of one product, in sheet order. */
+    function fetchV1Fields(product, onSuccess, onError) {
+        restGet("/rest/v1/loan_fields?select=label,type,formula,default_value&product=eq." +
+                encodeURIComponent(product) + "&order=sort_order.asc")
+            .then(rows => rows.map(Engine.normalizeField))
+            .then(onSuccess, err => onError(describeError(err)));
     }
 
     // =================================================================
@@ -1022,7 +1072,8 @@
     // Stamp the print subheading with the scheme and the time of printing
     window.addEventListener('beforeprint', function () {
         const printSub = document.getElementById('print-subhead');
-        const product = document.getElementById("productSelect").value;
+        const select = document.getElementById("productSelect");
+        const product = select.selectedIndex >= 0 ? select.options[select.selectedIndex].text : '';
         if (printSub && product) {
             printSub.textContent = product + " • " + new Date().toLocaleDateString('en-IN', {
                 year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'

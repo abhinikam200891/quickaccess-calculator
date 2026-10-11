@@ -1,10 +1,11 @@
 /**
  * ============================================================================
  * LOAN CHARGES FORMULA ENGINE
- * Evaluates spreadsheet-style scheme definitions (exported from Google Sheets)
- * in dependency order. Fields are addressed like sheet cells: the first field
- * is B2, the second B3, ... Formulas are compiled once from a whitelist of
- * tokens, so no arbitrary code from the database can ever be executed.
+ * Evaluates spreadsheet-style scheme definitions in dependency order.
+ * Formulas refer to other fields by key (v2, e.g. "amount*1%") or, for the
+ * original Google Sheets import (v1), by cell position: the first field is B2,
+ * the second B3, ... Formulas are compiled once from a whitelist of tokens,
+ * so no arbitrary code from the database can ever be executed.
  * ============================================================================
  */
 (function (root, factory) {
@@ -65,12 +66,15 @@
   }
 
   /**
-   * Normalise one field as stored in the database or in the local cache.
-   * @returns {{label:string, type:'input'|'output'|'select', formula:string, defaultValue?:number, key?:string}}
+   * Normalise one field. Accepts both database layouts:
+   *  - v1 (loan_fields): type, formula with B2-style cells, options packed in formula, TOTAL row
+   *  - v2 (loan_scheme_fields): key, kind, formula with keys, options array, in_total flag
+   * @returns {{label:string, type:'input'|'output'|'select', formula:string, defaultValue?:number,
+   *            key?:string, options?:Array<{label:string,value:number}>, inTotal?:boolean}}
    */
   LoanChargesEngine.normalizeField = function (raw) {
     const r = raw || {};
-    const type = String(r.type || 'input').trim().toLowerCase();
+    const type = String(r.type || r.kind || 'input').trim().toLowerCase();
     const f = {
       label: String(r.label == null ? '' : r.label).trim(),
       type: (type === 'output' || type === 'select') ? type : 'input',
@@ -79,18 +83,25 @@
     const dv = r.defaultValue !== undefined ? r.defaultValue : r.default_value;
     if (dv !== null && dv !== undefined && dv !== '' && !isNaN(Number(dv))) f.defaultValue = Number(dv);
     if (r.key) f.key = String(r.key).trim().toUpperCase();
+    if (Array.isArray(r.options)) {
+      f.options = r.options.map(o => ({ label: String(o.label), value: Number(o.value) || 0 }));
+    }
+    const inTotal = r.inTotal !== undefined ? r.inTotal : r.in_total;
+    if (inTotal !== undefined && inTotal !== null) f.inTotal = Boolean(inTotal);
     return f;
   };
 
+  /** True for the v1 "TOTAL" row (v2 schemes have no total row; see evaluate().total). */
   LoanChargesEngine.isTotal = function (field) {
-    return /^total/i.test(field.label || '');
+    return field.inTotal === undefined && /^total/i.test(field.label || '');
   };
 
   /**
-   * Options of a select field, stored in its formula as "Label:value, Label:value".
+   * Options of a select field: the v2 options array, or the v1 "Label:value, Label:value" formula.
    * @returns {Array<{label:string, value:number}>}
    */
   LoanChargesEngine.parseOptions = function (field) {
+    if (field.options && field.options.length) return field.options;
     const raw = field.formula ? String(field.formula) : '';
     if (!raw) return [{ label: 'Default', value: 0 }];
     return raw.split(',').map(s => s.trim()).filter(Boolean).map(opt => {
@@ -219,10 +230,13 @@
    */
   LoanChargesEngine.compile = function (rawFields) {
     const fields = (rawFields || []).map(LoanChargesEngine.normalizeField);
+    // v2 schemes name every field; then sheet positions (B3) are not valid references,
+    // so moving a row can never silently change a formula.
+    const named = fields.length > 0 && fields.every(f => f.key);
     const refs = {};
     fields.forEach((f, i) => {
-      refs[cellId(i)] = i;
-      if (f.key) refs[f.key] = i;
+      if (named) refs[f.key] = i;
+      else refs[cellId(i)] = i;
     });
 
     const errors = {};
@@ -290,8 +304,14 @@
           }
         });
 
-        const totalIdx = fields.findIndex(LoanChargesEngine.isTotal);
-        return { values: values, errors: runErrors, total: totalIdx === -1 ? null : values[totalIdx] };
+        let total = null;
+        if (fields.some(f => f.inTotal !== undefined)) {
+          total = fields.reduce((s, f, i) => s + (f.inTotal ? values[i] : 0), 0);
+        } else {
+          const totalIdx = fields.findIndex(LoanChargesEngine.isTotal);
+          if (totalIdx !== -1) total = values[totalIdx];
+        }
+        return { values: values, errors: runErrors, total: total };
       }
     };
   };
