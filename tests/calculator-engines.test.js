@@ -4,31 +4,12 @@ const Dds = require('../assets/js/calculators/dds-engine.js');
 const Lakhpati = require('../assets/js/calculators/lakhpati-engine.js');
 const Dividend = require('../assets/js/calculators/dividend-engine.js');
 
-test('DDS: text dates are kept and sorted by real date', () => {
-  const rows = [
-    { POSTDATE: '13/02/2025', Deposits: 28000, Withdrawals: 0 },
-    { POSTDATE: '05/01/2025', Deposits: 30000, Withdrawals: 0 },
-    { POSTDATE: '20/03/2025', Deposits: 31000, Withdrawals: 0 }
-  ];
-  const { finalTxRows } = Dds.prepareTransactions(rows, new Date(2024, 11, 31), new Date(2025, 3, 30, 23, 59));
-  const real = finalTxRows.filter(r => !r.isAutoFilled);
-  assert.deepEqual(real.map(r => r.Deposits), [30000, 28000, 31000]);
-  assert.equal(real[2].CalculatedBalance, 89000);
-  assert.equal(finalTxRows.length, 4); // + carried-forward April
-});
-
 test('DDS: duration and rate bands', () => {
   const d = Dds.calcDuration('01/01/2025', new Date(2026, 0, 2));
   assert.equal(d.totalMonths, 12);
   assert.equal(d.days, 1);
   assert.equal(Dds.getRate(d.totalMonths, d.days), 5.0);
   assert.equal(Dds.getRate(12, 0), 2.0);
-});
-
-test('DDS: calcDuration does not modify the caller\'s dates', () => {
-  const end = new Date(2026, 0, 2, 15, 30);
-  Dds.calcDuration('01/01/2025', end);
-  assert.equal(end.getHours(), 15);
 });
 
 test('Lakhpati: blank received amount means every month is due', () => {

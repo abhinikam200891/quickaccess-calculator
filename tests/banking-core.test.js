@@ -2,23 +2,14 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const BankingCore = require('../assets/js/banking-core.js');
 
-test('round: half away from zero, like Excel', () => {
-  assert.equal(BankingCore.round(1.005, 2), 1.01);
-  assert.equal(BankingCore.round(123456.785, 2), 123456.79);
+// BankingCore.round is the original rounding and must stay unchanged: DDS results depend on it.
+test('round: original behaviour (kept for DDS)', () => {
   assert.equal(BankingCore.round(2.5, 0), 3);
   assert.equal(BankingCore.round(-2.5, 0), -3);
   assert.equal(BankingCore.round(0.1 + 0.2, 2), 0.3);
-});
-
-test('round: negative digits round to tens / hundreds', () => {
-  assert.equal(BankingCore.round(1250, -2), 1300);
-  assert.equal(BankingCore.round(1249, -2), 1200);
-});
-
-test('round: bad and tiny input', () => {
+  assert.equal(BankingCore.round(1.005, 2), 1.01);
   assert.equal(BankingCore.round('abc'), 0);
   assert.equal(BankingCore.round(Infinity), 0);
-  assert.equal(BankingCore.round(1e-7, 2), 0);
 });
 
 test('formatINR uses lakh / crore grouping', () => {

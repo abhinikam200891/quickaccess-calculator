@@ -24,6 +24,16 @@ test('evaluates a scheme like the Google Sheet', () => {
   assert.equal(r.total, 200 + 36 + 9000 + 1200 + 500);
 });
 
+test('ROUND follows Excel (1.005 -> 1.01, halves away from zero, negative digits)', () => {
+  const s = Engine.compile([
+    { label: 'A', type: 'output', formula: 'ROUND(1.005, 2)' },
+    { label: 'B', type: 'output', formula: 'ROUND(-2.5, 0)' },
+    { label: 'C', type: 'output', formula: 'ROUND(1250, -2)' },
+    { label: 'D', type: 'output', formula: 'ROUND(1249, -2)' }
+  ]);
+  assert.deepEqual(s.evaluate({}).values, [1.01, -3, 1300, 1200]);
+});
+
 test('IF without a false branch counts as 0', () => {
   const s = Engine.compile([
     { label: 'H', type: 'input' },

@@ -326,18 +326,18 @@
         </p>
         <div class="rule-grid">
             <div class="item-box" style="border-color: #bfdbfe;">
-                <div class="item-label" style="color: #1e40af;">Up to 1 Year (&le; <span data-dds="longTermAfterMonths">12</span> Months)</div>
+                <div class="item-label" style="color: #1e40af;">Up to 1 Year (&le; 12 Months)</div>
                 <div class="item-val" style="color: #1d4ed8;"><span data-dds="shortTermRate" data-dec="2">2.00</span>% per year</div>
-                <div class="item-sub">For accounts open between <strong><span data-dds="minDurationMonths">6</span> months <span data-dds="minDurationDays">1</span> day</strong> and <strong><span data-dds="longTermAfterMonths">12</span> months</strong>.</div>
+                <div class="item-sub">For accounts open between <strong><span data-dds="minDurationMonths">6</span> months <span data-dds="minDurationDays">1</span> day</strong> and <strong>12 months</strong>.</div>
             </div>
             <div class="item-box" style="border-color: #fde68a;">
-                <div class="item-label" style="color: #b45309;">More than 1 Year (&gt; <span data-dds="longTermAfterMonths">12</span> Months)</div>
+                <div class="item-label" style="color: #b45309;">More than 1 Year (&gt; 12 Months)</div>
                 <div class="item-val" style="color: #b45309;"><span data-dds="longTermRate" data-dec="2">5.00</span>% per year</div>
-                <div class="item-sub">For accounts open for <strong><span data-dds="longTermAfterMonths">12</span> months and 1 day</strong> or longer.</div>
+                <div class="item-sub">For accounts open for <strong>12 months and 1 day</strong> or longer.</div>
             </div>
         </div>
         <div class="tip-box">
-            💡 <strong>Helpful Tip:</strong> An account closed at exactly <span data-dds="longTermAfterMonths">12</span> months earns <strong><span data-dds="shortTermRate" data-dec="2">2.00</span>%</strong>. If kept for just <strong>1 extra day</strong> (<span data-dds="longTermAfterMonths">12</span> months and 1 day), the rate increases to <strong><span data-dds="longTermRate" data-dec="2">5.00</span>%</strong> for the entire duration!
+            💡 <strong>Helpful Tip:</strong> An account closed at exactly 12 months earns <strong><span data-dds="shortTermRate" data-dec="2">2.00</span>%</strong>. If kept for just <strong>1 extra day</strong> (12 months and 1 day), the rate increases to <strong><span data-dds="longTermRate" data-dec="2">5.00</span>%</strong> for the entire duration!
         </div>
     </div>
 
@@ -456,8 +456,7 @@
             commissionPct: c.commissionRate * 100,
             minDurationMonths: c.minDurationMonths,
             minDurationDays: c.minDurationDays,
-            commissionCutoffMonths: c.commissionCutoffMonths,
-            longTermAfterMonths: c.longTermAfterMonths
+            commissionCutoffMonths: c.commissionCutoffMonths
         };
         document.querySelectorAll('[data-dds]').forEach(el => {
             const v = values[el.dataset.dds];
@@ -504,20 +503,21 @@
             : `<span class="badge-red">Not Eligible (&lt; ${minText})</span>`;
 
         // Rate Check
-        const isLong = engine.isLongTerm(dur.totalMonths, dur.days);
+        const isLong = engine.getRate(dur.totalMonths, dur.days) === c.longTermRate;
         const rate = isValid ? engine.getRate(dur.totalMonths, dur.days) : 0;
         rateEl.innerText = `${rate.toFixed(2)}% per year`;
 
         if (!isValid) {
             rateBadge.innerHTML = `<span class="badge-red">0% (Closed too early)</span>`;
         } else if (isLong) {
-            rateBadge.innerHTML = `<span class="badge-gold">More than ${c.longTermAfterMonths} months</span>`;
+            rateBadge.innerHTML = `<span class="badge-gold">More than 1 year</span>`;
         } else {
-            rateBadge.innerHTML = `<span class="badge-blue">Up to ${c.longTermAfterMonths} months</span>`;
+            rateBadge.innerHTML = `<span class="badge-blue">Up to 1 year</span>`;
         }
 
-        // Start of the commission window
-        cutoffEl.innerText = engine.commissionCutoffDate(withdrawDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+        // Start of the commission window (same rule as DdsEngine.calculateReport)
+        const cutoffDate = new Date(withdrawDate.getFullYear(), withdrawDate.getMonth() - (c.commissionCutoffMonths - 1), 1);
+        cutoffEl.innerText = cutoffDate.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
 
         // Monthly limit in a 30-day month (31-day benefit when the cap rule is on)
         const cap30 = limit * (c.interestDaysCapRule ? 31 : 30);

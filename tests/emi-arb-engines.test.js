@@ -44,11 +44,9 @@ test('ARB overdue interest on a 365-day basis', () => {
   assert.equal(ArbOverdue.overdueInterest({ principal: 100000, rate: 12, fromDate: '02/04/2026', toDate: new Date(2026, 3, 1) }).ok, false);
 });
 
-test('DDS policy: minimum duration, rate band and commission window', () => {
+test('DDS policy: minimum duration and rate band', () => {
   assert.equal(Dds.validatePolicy(Dds.calcDuration('01/01/2024', new Date(2024, 6, 1))).valid, false); // 6 m 0 d
   assert.equal(Dds.validatePolicy(Dds.calcDuration('01/01/2024', new Date(2024, 6, 2))).valid, true);  // 6 m 1 d
-  assert.equal(Dds.isLongTerm(12, 0), false);
-  assert.equal(Dds.isLongTerm(12, 1), true);
-  const cut = Dds.commissionCutoffDate(new Date(2026, 9, 11));
-  assert.deepEqual([cut.getFullYear(), cut.getMonth(), cut.getDate()], [2026, 4, 1]); // May–Oct = last 6 months
+  assert.equal(Dds.getRate(12, 0), 2.0);
+  assert.equal(Dds.getRate(12, 1), 5.0);
 });

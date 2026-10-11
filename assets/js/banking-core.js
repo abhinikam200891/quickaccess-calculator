@@ -32,18 +32,16 @@
    * @returns {number}
    */
   BankingCore.round = function (value, decimals = 2) {
+    // Original rounding, kept as is: the DDS figures (approved by the customer) depend on it.
     const num = Number(value);
     if (isNaN(num) || !isFinite(num)) return 0;
-    const d = Math.trunc(Number(decimals) || 0);
     const sign = num < 0 ? -1 : 1;
     const absNum = Math.abs(num);
-    if (absNum >= 1e15) return num;
-    if (String(absNum).indexOf('e') !== -1) return d >= 7 ? num : 0; // tiny values like 1e-7
-    // Shift the decimal point in the string form so 1.005 rounds to 1.01 (multiplying gives 100.4999...).
-    // Half rounds away from zero, as in Excel; negative decimals round to tens/hundreds.
-    const roundedAbs = Number(Math.round(Number(absNum + 'e' + d)) + 'e' + (-d));
+    const factor = Math.pow(10, decimals);
+    const roundedAbs = Math.round((absNum + Number.EPSILON) * factor) / factor;
     return roundedAbs === 0 ? 0 : sign * roundedAbs;
   };
+
 
   /**
    * Parse arbitrary text into a clean float, stripping ₹, commas, spaces

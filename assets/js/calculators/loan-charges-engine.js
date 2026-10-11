@@ -30,9 +30,14 @@
 
   const FIRST_ROW = 2; // field index 0 is cell B2, as in the source sheet
 
+  // Excel ROUND: half away from zero, exact for values like 1.005; negative digits round to tens/hundreds
   function excelRound(num, digits) {
-    if (BankingCore) return BankingCore.round(num, Math.trunc(digits || 0));
+    if (!isFinite(num)) return 0;
     const d = Math.trunc(digits || 0);
+    if (Math.abs(num) >= 1e15 || String(Math.abs(num)).indexOf('e') !== -1) {
+      const f = Math.pow(10, d);
+      return Math.round(num * f) / f;
+    }
     const sign = num < 0 ? -1 : 1;
     return sign * Number(Math.round(Number(Math.abs(num) + 'e' + d)) + 'e' + (-d));
   }
