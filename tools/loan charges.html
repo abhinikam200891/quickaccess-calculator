@@ -544,22 +544,26 @@
     const FRESH_MS     = 10 * 60 * 1000;   // reuse cached data for 10 min
     const TIMEOUT_MS   = 8000;             // per request
     const CACHE_PREFIX = "qa_loan_v2:";
-    let configFreshAfter = 0;              // set on manual reconnect
 
     const Engine = window.BankingLoanChargesEngine;
 
     // State
-    let schemes = [];                      // [{ id, title, fields|null }] — fields null = load on demand (v1)
+    let schemes = [];                      // [{ id, title, fields }]
     let currentScheme = null;              // compiled scheme from the engine
     let currentViewMode = 'split';         // 'split' | 'matrix'
 
     // =================================================================
     // INITIALIZATION & SCHEME LOADING
-    // v2 (loan_schemes + loan_scheme_fields) arrives in one request with every
-    // field, so all schemes work offline after one visit. Until the v2 tables
-    // exist, the old loan_products / loan_fields tables are used.
+    // loan_schemes + loan_scheme_fields arrive in one request with every field,
+    // so all schemes work offline after one visit.
     // =================================================================
     window.onload = function () {
+        // Drop caches written by versions that read the old loan_products / loan_fields tables
+        try {
+            Object.keys(localStorage)
+                .filter(k => k === CACHE_PREFIX + 'products' || k.startsWith(CACHE_PREFIX + 'cfg:'))
+                .forEach(k => localStorage.removeItem(k));
+        } catch (e) {}
         initProducts(false);
     };
 
@@ -581,17 +585,15 @@
         return new Date(t).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
     }
 
-    // Cached scheme list; also accepts the plain name list cached by earlier versions
+    // Cached scheme list (with all fields)
     function cachedSchemes(maxAgeMs) {
-        const c = cacheGet('schemes', maxAgeMs) || cacheGet('products', maxAgeMs);
-        if (!c || !Array.isArray(c.d) || c.d.length === 0) return null;
-        const list = c.d.map(s => typeof s === 'string' ? { id: s, title: s, fields: null } : s);
-        return { t: c.t, list: list };
+        const c = cacheGet('schemes', maxAgeMs);
+        if (!c || !Array.isArray(c.d) || c.d.length === 0 || !c.d.every(s => Array.isArray(s.fields))) return null;
+        return { t: c.t, list: c.d };
     }
 
     function initProducts(forceRefresh) {
         toggleLoader(true);
-        if (forceRefresh) configFreshAfter = Date.now();
 
         if (!forceRefresh) {
             const c = cachedSchemes(FRESH_MS);
@@ -706,42 +708,7 @@
             return;
         }
 
-        // v2: every field arrived with the scheme list
-        if (scheme.fields) {
-            applyScheme(scheme.fields);
-            return;
-        }
-
-        // v1: fields are fetched per scheme. Fresh cache (<10 min, and not older than last manual reconnect)
-        const cacheKey = 'cfg:' + scheme.id;
-        const c = cacheGet(cacheKey, FRESH_MS);
-        if (c && c.t > configFreshAfter && Array.isArray(c.d) && c.d.length > 0) {
-            applyScheme(c.d);
-            return;
-        }
-
-        toggleLoader(true);
-        fetchV1Fields(scheme.id, function (config) {
-            toggleLoader(false);
-            if (config.length > 0) {
-                cacheSet(cacheKey, config);
-                applyScheme(config);
-            } else {
-                showStatus("Error: No fields configured for this scheme", "error");
-                showOfflineCard("No fields configured for " + scheme.title + ".");
-            }
-        }, function (errMsg) {
-            toggleLoader(false);
-            console.warn("Scheme config load failed:", errMsg);
-            const old = cacheGet(cacheKey);   // last synced copy, any age
-            if (old && Array.isArray(old.d) && old.d.length > 0) {
-                applyScheme(old.d);
-                showStatus("Offline: using scheme last synced " + fmtSynced(old.t), "info");
-                return;
-            }
-            showStatus("Failed to load scheme: " + errMsg, "error");
-            showOfflineCard(errMsg);
-        });
+        applyScheme(scheme.fields);
     }
 
     function applyScheme(config) {
@@ -1018,32 +985,16 @@
         return "Network error — server unreachable or blocked by firewall.";
     }
 
-    /** Scheme list as [{ id, title, fields }]; v1 entries have fields = null. */
+    /** Active schemes with their fields: [{ id, title, fields }] */
     function fetchSchemes(onSuccess, onError) {
-        const v2 = "/rest/v1/loan_schemes?select=code,name,loan_scheme_fields(key,label,kind,formula,default_value,options,in_total,sort_order)" +
+        const path = "/rest/v1/loan_schemes?select=code,name,loan_scheme_fields(key,label,kind,formula,default_value,options,in_total,sort_order)" +
                    "&active=eq.true&order=sort_order.asc,name.asc&loan_scheme_fields.order=sort_order.asc";
-        restGet(v2)
+        restGet(path)
             .then(rows => rows.map(r => ({
                 id: r.code,
                 title: '(' + r.code + ') ' + r.name,
                 fields: (r.loan_scheme_fields || []).map(Engine.normalizeField)
             })))
-            .catch(err => {
-                // 404 = v2 tables not created yet: use the original import
-                if (err && err.status === 404) {
-                    return restGet("/rest/v1/loan_products?select=name&active=eq.true&order=sort_order.asc,name.asc")
-                        .then(rows => rows.map(r => ({ id: r.name, title: r.name, fields: null })));
-                }
-                throw err;
-            })
-            .then(onSuccess, err => onError(describeError(err)));
-    }
-
-    /** v1 only: fields of one product, in sheet order. */
-    function fetchV1Fields(product, onSuccess, onError) {
-        restGet("/rest/v1/loan_fields?select=label,type,formula,default_value&product=eq." +
-                encodeURIComponent(product) + "&order=sort_order.asc")
-            .then(rows => rows.map(Engine.normalizeField))
             .then(onSuccess, err => onError(describeError(err)));
     }
 

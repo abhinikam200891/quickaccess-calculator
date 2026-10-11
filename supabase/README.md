@@ -7,14 +7,16 @@ The Loan Charges tool reads its fee schemes from two tables.
 | `loan_schemes` | loan product: `code` (e.g. `1602`), `name`, `sort_order`, `active` |
 | `loan_scheme_fields` | line on the charges sheet, linked by `scheme_id` |
 
-## Applying the migration
+## History
 
-1. Supabase Dashboard → **SQL Editor** → paste `migrations/20261011000000_loan_schemes_v2.sql` → **Run**.
-2. Check: `select count(*) from loan_schemes;` → 15, `select count(*) from loan_scheme_fields;` → 234.
-3. Open Loan Charges. Scheme names now start with the code, e.g. `(1602) OLD VEHICLE LOAN`.
-   Until step 1 is done, the app keeps using the old `loan_products` / `loan_fields` tables.
-4. When the new version is live and checked, the old tables can be dropped:
-   `drop table loan_fields; drop table loan_products;`
+| Migration | What it did |
+|---|---|
+| `20261011000000_loan_schemes_v2` | Created the two tables from the Google Sheets import (named keys, corrections, spelling fixes) |
+| `20261011230000_harden_loan_permissions` | Public roles can only read; removed API access to `rls_auto_enable()` |
+| `20261012000000_loan_schemes_active_only` | Removed the catch-all read policy, so inactive schemes stay hidden |
+| `20261012010000_drop_old_loan_tables` | Dropped the original `loan_products` / `loan_fields` import |
+
+The dropped tables are saved in `backups/old_loan_tables_backup.sql` (structure + all rows); running that file in the SQL Editor recreates them.
 
 ## Fields
 
@@ -40,7 +42,7 @@ A formula that uses an unknown key or function shows `ERR` in red on that line, 
 
 ## Access
 
-Row Level Security allows the public (anon) key to **read active schemes only**. There are no write policies, so edits are possible only from the dashboard. The planned admin page will need its own login and write policies.
+Row Level Security allows the public (anon) key to **read active schemes only**, and the public roles have no write privileges at all. Edits are possible only from the dashboard. The planned admin page will need its own login, grants and write policies.
 
 ## Applying changes with the CLI
 

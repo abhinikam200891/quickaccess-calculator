@@ -25,25 +25,32 @@
 })(typeof self !== 'undefined' ? self : this, function (BankingCore) {
   'use strict';
 
-  // The DDS policy. dds.html and the rules page (ddsrules.html) both read these values,
-  // including the numbers shown in the rules text, so change them only here.
+  const DAYS_IN_MONTH = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
   const DdsEngine = {
-    version: '1.1.0',
+    version: '1.0.0',
     DEFAULT_CONFIG: {
-      minDurationMonths: 6,      // eligible from 6 months ...
-      minDurationDays: 1,        // ... and 1 day
-      longTermAfterMonths: 12,   // more than this many months earns the long-term rate
-      shortTermRate: 2.0,        // % p.a. up to longTermAfterMonths
-      longTermRate: 5.0,         // % p.a. beyond longTermAfterMonths
-      commissionRate: 0.03,      // 3% agent commission on deposits above the monthly limit
-      commissionCutoffMonths: 6, // ... only in the last 6 months before withdrawal
-      interestDaysCapRule: true  // 30-day months use a 31-day limit for interest
+      minDurationMonths: 6,
+      minDurationDays: 1,
+      shortTermRate: 2.0, // <= 12 months
+      longTermRate: 5.0,  // > 12 months
+      commissionRate: 0.03, // 3%
+      commissionCutoffMonths: 6, // Last 6 months relative to withdrawal
+      interestDaysCapRule: true // 30-day month -> 31-day cap
     }
   };
 
-  // Shared bank date parser (DD/MM/YYYY, YYYY-MM-DD, Excel serials); returns a copy for Date input
+  /**
+   * Helper to parse date
+   */
   function parseDate(val) {
-    return BankingCore.dates.parse(val);
+    if (!val) return null;
+    if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+    if (BankingCore && BankingCore.dates && BankingCore.dates.parse) {
+      return BankingCore.dates.parse(val);
+    }
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
   }
 
   /**
@@ -69,10 +76,26 @@
     if (!start) return { ok: false, msg: "Invalid Start Date" };
     if (!end) return { ok: false, msg: "Invalid Withdrawal Date" };
 
-    const diff = BankingCore.dates.diffYMD(start, end);
-    if (!diff) return { ok: false, msg: "Opening Date cannot be after Withdrawal Date" };
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
 
-    return { ok: true, totalMonths: diff.totalMonths, days: diff.days, text: `${diff.totalMonths} Mths, ${diff.days} Days` };
+    if (start > end) return { ok: false, msg: "Opening Date cannot be after Withdrawal Date" };
+
+    let years = end.getFullYear() - start.getFullYear();
+    let months = end.getMonth() - start.getMonth();
+    let days = end.getDate() - start.getDate();
+
+    if (days < 0) {
+      months--;
+      days += new Date(end.getFullYear(), end.getMonth(), 0).getDate();
+    }
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+
+    const totalMonths = (years * 12) + months;
+    return { ok: true, totalMonths, days, text: `${totalMonths} Mths, ${days} Days` };
   };
 
   /**
@@ -90,31 +113,13 @@
   };
 
   /**
-   * True when the account was open longer than longTermAfterMonths (e.g. 12 months + 1 day).
-   */
-  DdsEngine.isLongTerm = function (totalMonths, days, config = {}) {
-    const after = config.longTermAfterMonths !== undefined ? config.longTermAfterMonths : DdsEngine.DEFAULT_CONFIG.longTermAfterMonths;
-    return totalMonths > after || (totalMonths === after && days > 0);
-  };
-
-  /**
-   * First day of the commission window: deposits from this date on (the last
-   * commissionCutoffMonths calendar months, including the withdrawal month) are charged commission.
-   */
-  DdsEngine.commissionCutoffDate = function (withdrawalDate, config = {}) {
-    const months = config.commissionCutoffMonths !== undefined ? config.commissionCutoffMonths : DdsEngine.DEFAULT_CONFIG.commissionCutoffMonths;
-    const w = parseDate(withdrawalDate);
-    return new Date(w.getFullYear(), w.getMonth() - (months - 1), 1);
-  };
-
-  /**
    * Determine interest rate based on tenure
    */
   DdsEngine.getRate = function (totalMonths, days, config = {}) {
     const shortRate = config.shortTermRate !== undefined ? config.shortTermRate : DdsEngine.DEFAULT_CONFIG.shortTermRate;
     const longRate = config.longTermRate !== undefined ? config.longTermRate : DdsEngine.DEFAULT_CONFIG.longTermRate;
 
-    return DdsEngine.isLongTerm(totalMonths, days, config) ? longRate : shortRate;
+    return (totalMonths > 12 || (totalMonths === 12 && days > 0)) ? longRate : shortRate;
   };
 
   /**
@@ -125,12 +130,13 @@
    * @returns {Object} { openingBal, finalTxRows }
    */
   DdsEngine.prepareTransactions = function (rows, userDate, withdrawalDate) {
-    // Parse once with the banking parser so text dates like "13/05/2026" are kept and sorted correctly
     const validRows = rows
-      .map(r => ({ r: r, d: parseDate(r.POSTDATE) }))
-      .filter(x => x.d && x.d <= withdrawalDate)
-      .sort((a, b) => a.d - b.d)
-      .map(x => x.r);
+      .filter(r => {
+        if (!r.POSTDATE) return false;
+        const rDate = parseDate(r.POSTDATE);
+        return rDate && !isNaN(rDate) && rDate <= withdrawalDate;
+      })
+      .sort((a, b) => new Date(a.POSTDATE) - new Date(b.POSTDATE));
 
     let runningBalance = 0;
     let openingBal = 0;
@@ -243,7 +249,9 @@
       const rate = DdsEngine.getRate(dur.totalMonths, dur.days, config);
 
       // Cutoff date for commission (trailing 6 months relative to withdrawal date)
-      const cutoffDate = DdsEngine.commissionCutoffDate(withdrawalDateObj, config);
+      const nowForComm = new Date(withdrawalDateObj);
+      const cutoffDate = new Date(nowForComm.getFullYear(), nowForComm.getMonth() - (config.commissionCutoffMonths - 1), 1);
+      cutoffDate.setHours(0, 0, 0, 0);
 
       let totalComm = 0;
       let runningRecalBal = startBal;
@@ -253,7 +261,7 @@
 
       const processed = rows.map((r) => {
         const d = parseDate(r.POSTDATE);
-        const actualDim = DdsEngine.getEndOfMonth(d.getFullYear(), d.getMonth()).getDate();
+        const actualDim = (d.getMonth() === 1 && ((d.getFullYear() % 4 === 0 && d.getFullYear() % 100 !== 0) || d.getFullYear() % 400 === 0)) ? 29 : DAYS_IN_MONTH[d.getMonth() + 1];
         const interestDim = (config.interestDaysCapRule && actualDim === 30) ? 31 : actualDim;
 
         const mLimitCommission = limit * actualDim;
@@ -315,6 +323,7 @@
         return {
           rawDate: d,
           date: d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
+          dateStr: d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
           days: actualDim,
           dep: dep,
           withdraw: withDr,
