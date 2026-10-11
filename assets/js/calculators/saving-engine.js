@@ -28,7 +28,7 @@
   const SavingEngine = {
     version: '1.0.0',
     DEFAULT_CONFIG: {
-      defaultRate: 3.5 // 3.5% p.a.
+      defaultRate: 3.0 // % p.a.; the page starts with this value
     }
   };
 

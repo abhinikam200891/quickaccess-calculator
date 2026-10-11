@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ARB Samopchar (D1) Settlement Calculator</title>
-    <meta name="tool-name" content="ARB Samopchar (D1)">
-    <meta name="tool-icon" content="📜">
-    <meta name="tool-desc" content="Arbitration recovery D1 prastav">
     <link rel="stylesheet" href="../assets/css/banking-theme.css">
     <script src="../assets/js/banking-core.js"></script>
     <script src="../assets/js/calculators/arb-samopchar-engine.js"></script>
@@ -1228,7 +1225,8 @@
         document.getElementById('d1Date').value = '';
         document.getElementById('prastavDate').value = '';
         document.getElementById('daysSide').textContent = '0 Days';
-        document.getElementById('inline_cp_rate').value = '0.75';
+        const engine = (window.BankingCore && window.BankingCore.calculators && window.BankingCore.calculators.arbSamopchar) || window.BankingArbSamopcharEngine;
+        document.getElementById('inline_cp_rate').value = engine.DEFAULT_CONFIG.defaultCostOfProcessRate;
 
         document.getElementById('h_rate_1').value = '8';
         document.getElementById('h_rate_2').value = '10';

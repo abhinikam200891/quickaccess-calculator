@@ -316,7 +316,5 @@
     };
   };
 
-  LoanChargesEngine.cellId = cellId;
-
   return LoanChargesEngine;
 });

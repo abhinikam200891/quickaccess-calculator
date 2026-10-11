@@ -28,7 +28,7 @@
   const LakhpatiEngine = {
     version: '1.0.0',
     DEFAULT_CONFIG: {
-      defaultPenaltyRate: 2.0
+      defaultPenaltyRate: 1.0 // % per missed instalment; the page starts with this value
     }
   };
 

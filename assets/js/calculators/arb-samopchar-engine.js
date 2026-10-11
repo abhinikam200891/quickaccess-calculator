@@ -106,7 +106,7 @@
    * @param {number} costOfProcessRate
    * @returns {Object}
    */
-  ArbSamopcharEngine.calculateColumn = function (col, overdueDays = 0, costOfProcessRate = 0.75) {
+  ArbSamopcharEngine.calculateColumn = function (col, overdueDays = 0, costOfProcessRate = ArbSamopcharEngine.DEFAULT_CONFIG.defaultCostOfProcessRate) {
     const parse = (v) => BankingCore ? BankingCore.parseAmount(v) : (parseFloat(v) || 0);
     const round = (v, d = 2) => BankingCore ? BankingCore.round(v, d) : Math.round(v * 100) / 100;
 
@@ -118,7 +118,7 @@
     const receivedAfterD1 = parse(col.receivedAfterD1);
 
     const amtD1 = principal + intPrastav + otherCharges;
-    const totInt = (principal * rate * overdueDays) / 36500;
+    const totInt = (principal * rate * overdueDays) / ArbSamopcharEngine.DEFAULT_CONFIG.dayBasis;
     const receivable = amtD1 + totInt;
     const amtD1Calc = receivable + insurance - receivedAfterD1;
     const costOfProcessAmt = (amtD1Calc * (costOfProcessRate / 100));

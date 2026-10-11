@@ -29,13 +29,9 @@
 
   const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+  // Financial year runs April-March; the month of allotment / resignation earns nothing.
   const DividendEngine = {
-    version: '1.0.0',
-    DEFAULT_CONFIG: {
-      fyStartMonth: 3, // 0-indexed, 3 = April
-      excludeTransactionMonth: true,
-      annualMonths: 12
-    }
+    version: '1.0.0'
   };
 
   /**
@@ -46,10 +42,9 @@
    * @param {number|string} params.amount Share allotment or total balance amount
    * @param {Date|string} params.actionDate Date of allotment or resignation
    * @param {number|string} [params.existingAmount=0] Opening share capital (for 'additional')
-   * @param {Object} [options] Optional config overrides
    * @returns {Object} { ok, totalDividend, interestAction, interestExisting, monthsCount, skipMonth, periodDesc, items, error }
    */
-  DividendEngine.calculate = function (params, options = {}) {
+  DividendEngine.calculate = function (params) {
     try {
       if (!params) throw new Error("Parameters required.");
       const type = params.type || 'new';

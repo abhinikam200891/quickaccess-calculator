@@ -323,7 +323,6 @@
         return {
           rawDate: d,
           date: d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
-          dateStr: d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
           days: actualDim,
           dep: dep,
           withdraw: withDr,

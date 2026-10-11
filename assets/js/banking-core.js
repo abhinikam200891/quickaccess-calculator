@@ -391,12 +391,5 @@
     info: (msg, dur) => BankingCore.toast.show(msg, 'info', dur)
   };
 
-  /* --------------------------------------------------------------------------
-   * 5. TOOL REGISTRY (populated by main.js)
-   * -------------------------------------------------------------------------- */
-
-  // Filled at runtime by main.js from toolRegistry (dynamically detected tools).
-  BankingCore.tools = [];
-
   return BankingCore;
 });

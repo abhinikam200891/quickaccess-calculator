@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lakhpati Penalty Calculator</title>
-    <meta name="tool-name" content="Lakhpati Penalty">
-    <meta name="tool-icon" content="⚠️">
-    <meta name="tool-desc" content="Lakhpati RD penalty calculations">
     <link rel="stylesheet" href="../assets/css/banking-theme.css">
     <script src="../assets/js/banking-core.js"></script>
     <script src="../assets/js/calculators/lakhpati-engine.js"></script>
@@ -201,6 +198,7 @@
         });
         document.getElementById("displayCurrentDate").value = dateString;
         document.getElementById("reportDate").innerText = dateString;
+        document.getElementById("rate").value = getLakhpatiEngine().DEFAULT_CONFIG.defaultPenaltyRate;
     };
 
     // Mobile View Switchers

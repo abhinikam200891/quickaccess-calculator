@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Saving Interest Calculator</title>
-    <meta name="tool-name" content="Saving Interest">
-    <meta name="tool-icon" content="💵">
-    <meta name="tool-desc" content="Savings interest from monthly minimum balances">
     
     <script src="../assets/js/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="../assets/css/banking-theme.css">
@@ -349,6 +346,10 @@
                 totalInt: schedule.totalInterest
             };
         }
+
+        // Starting rate comes from the engine so it is defined in one place
+        document.getElementById('interestRate').value = getSavingEngine().DEFAULT_CONFIG.defaultRate.toFixed(1);
+        updateRateLabel();
 
         window.exportSavingToExcel = function() {
             if (!window.lastSavingData || !window.lastSavingData.items) {

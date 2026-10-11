@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cash Denomination — Count & Tally</title>
-    <meta name="tool-name" content="Cash Denomination">
-    <meta name="tool-icon" content="💵">
-    <meta name="tool-desc" content="Cash count by note & coin, tally vs book balance">
     <link rel="stylesheet" href="../assets/css/banking-theme.css">
     <style>
         body { padding: 0 16px 20px; margin: 0; background: var(--bg-app); min-height: 100vh; }
@@ -140,10 +137,7 @@
     const $ = id => document.getElementById(id);
     const inr0 = n => BankingCore.formatINR(n, { decimals: 0 });
     const inr2 = n => BankingCore.formatINR(n, { decimals: 2 });
-    const todayISO = () => {
-        const d = new Date();
-        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    };
+    const todayISO = () => BankingCore.dates.todayISO();
 
     // Accepts "245", "100+100+45", "3*100+45" (x or × also work for multiply). Returns null if invalid.
     function parseCount(text) {
