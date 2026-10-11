@@ -987,12 +987,12 @@
 
     /** Active schemes with their fields: [{ id, title, fields }] */
     function fetchSchemes(onSuccess, onError) {
-        const path = "/rest/v1/loan_schemes?select=code,name,loan_scheme_fields(key,label,kind,formula,default_value,options,in_total,sort_order)" +
+        const path = "/rest/v1/loan_schemes?select=scheme_code,name,loan_scheme_fields(key,label,kind,formula,default_value,options,in_total,sort_order)" +
                    "&active=eq.true&order=sort_order.asc,name.asc&loan_scheme_fields.order=sort_order.asc";
         restGet(path)
             .then(rows => rows.map(r => ({
-                id: r.code,
-                title: '(' + r.code + ') ' + r.name,
+                id: r.scheme_code,
+                title: '(' + r.scheme_code + ') ' + r.name,
                 fields: (r.loan_scheme_fields || []).map(Engine.normalizeField)
             })))
             .then(onSuccess, err => onError(describeError(err)));
