@@ -181,7 +181,7 @@
 <script src="../assets/js/banking-core.js"></script>
 <script>
     function setEndDateToday() {
-        document.getElementById('endDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('endDate').value = BankingCore.dates.todayISO();
         calculateDate();
     }
 
@@ -199,8 +199,9 @@
 
         if (!sVal || !eVal) return;
 
-        const d1 = new Date(sVal);
-        const d2 = new Date(eVal);
+        const d1 = BankingCore.dates.parse(sVal);
+        const d2 = BankingCore.dates.parse(eVal);
+        if (!d1 || !d2) return;
 
         if (d1 > d2) {
             BankingCore.toast.error("Start date cannot be after End date.");
@@ -268,7 +269,7 @@
         const today = new Date();
         const year = (today.getMonth() + 1 >= 4) ? today.getFullYear() : today.getFullYear() - 1;
         document.getElementById('startDate').value = `${year}-04-01`;
-        document.getElementById('endDate').value = today.toISOString().split('T')[0];
+        document.getElementById('endDate').value = BankingCore.dates.todayISO(today);
         calculateDate();
     };
 </script>

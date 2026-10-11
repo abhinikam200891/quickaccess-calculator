@@ -1,0 +1,8 @@
+{
+  "name": "quick-access-calculator",
+  "private": true,
+  "description": "Quick Access banking calculator workstation",
+  "scripts": {
+    "test": "node --test tests/"
+  }
+}

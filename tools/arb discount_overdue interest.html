@@ -217,8 +217,7 @@
 
 <script src="../assets/js/banking-core.js"></script>
 <script>
-    const today = new Date();
-    document.getElementById('globalDate').innerText = today.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    document.getElementById('globalDate').innerText = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
     function auditSavlat() {
         const balP = parseFloat(document.getElementById('balPrastav').value) || 0;
@@ -256,7 +255,10 @@
 
         if (!sancDateStr || isNaN(principal) || isNaN(rate) || principal <= 0) return;
 
-        const sancDate = new Date(sancDateStr);
+        const sancDate = BankingCore.dates.parse(sancDateStr);
+        if (!sancDate) return;
+        // Read the clock on every calculation: the page stays open in the shell across days
+        const today = new Date();
         if (sancDate > today) {
             if (window.BankingCore) BankingCore.toast.error("Sanction date cannot be in the future!");
             else alert("Sanction date cannot be in the future!");
@@ -276,7 +278,7 @@
         // Set default sanction date to 1 year ago for convenient testing
         const d = new Date();
         d.setFullYear(d.getFullYear() - 1);
-        document.getElementById('sanctionDate').value = d.toISOString().split('T')[0];
+        document.getElementById('sanctionDate').value = BankingCore.dates.todayISO(d);
     };
 </script>
 </body>

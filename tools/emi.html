@@ -314,8 +314,10 @@
             emi = BankingCore.round(P / n, 0);
         }
 
-        const totalPayment = emi * n;
-        const totalInterest = Math.max(0, totalPayment - P);
+        // Totals come from the schedule, whose last instalment absorbs the rounding of the EMI
+        const sched = generateSchedule(P, r, emi, n);
+        const totalInterest = sched.interest;
+        const totalPayment = sched.principal + sched.interest;
 
         // Update displays with formatted currency
         document.getElementById('disp-emi').innerText = BankingCore.formatINR(emi, { decimals: 0 });
@@ -330,7 +332,6 @@
         document.getElementById('disp-interest-ratio').innerText = `${iPct}% of total repayment`;
 
         drawChart(P, totalInterest);
-        generateSchedule(P, r, emi, n);
 
         // Populate Printable Loan Metadata
         const borrower = document.getElementById('borrowerName').value.trim();
@@ -401,6 +402,7 @@
         `;
 
         document.getElementById('table-body').innerHTML = rowsHtml;
+        return { principal: totalPrincipalPaid, interest: totalInterestPaid };
     }
 
     function drawChart(principal, interest) {
@@ -461,7 +463,7 @@
         a.href = url;
         a.download = `Loan_Repayment_Schedule_${Date.now()}.csv`;
         a.click();
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 1000); // revoking at once can cancel the download in some browsers
     }
 
     function resetForm() {

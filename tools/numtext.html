@@ -127,9 +127,32 @@
         document.getElementById('wordsOutput').innerText = words;
     }
 
+    // navigator.clipboard can be blocked inside the shell iframe; fall back to a hidden textarea
+    function copyText(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text).catch(() => legacyCopy(text));
+        }
+        return legacyCopy(text);
+    }
+
+    function legacyCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        ta.remove();
+        return ok ? Promise.resolve() : Promise.reject(new Error('Copy blocked'));
+    }
+
     function copyWords() {
         const text = document.getElementById('wordsOutput').innerText;
-        navigator.clipboard.writeText(text);
+        copyText(text).then(showCopied, () => BankingCore.toast.error('Could not copy. Select the words and press Ctrl+C.'));
+    }
+
+    function showCopied() {
         const btn = document.getElementById('copyBtn');
         const oldText = btn.innerText;
         btn.innerText = '✅ Copied!';

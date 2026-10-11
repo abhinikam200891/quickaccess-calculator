@@ -276,14 +276,6 @@
             document.getElementById('errorMsg').classList.remove('hidden');
         }
 
-        function cleanCurrency(val) {
-            return BankingCore.parseAmount(val);
-        }
-
-        function parseDate(val) {
-            return BankingCore.dates.parse(val);
-        }
-
         function getSavingEngine() {
             return (window.BankingCore && window.BankingCore.calculators && window.BankingCore.calculators.saving) || window.BankingSavingEngine;
         }
@@ -369,12 +361,11 @@
             const excelRows = [];
 
             data.items.forEach(item => {
-                const interest = (item.min * (data.rate/100)) / 12;
                 excelRows.push({
                     "Month": item.name,
                     "Minimum Balance (₹)": item.min,
                     "Interest Rate (%)": data.rate,
-                    "Monthly Interest (₹)": Math.round(interest * 100) / 100,
+                    "Monthly Interest (₹)": item.interest,
                     "Formula": `(${item.min} × ${data.rate}%) / 12`
                 });
             });
@@ -383,7 +374,7 @@
                 "Month": "TOTALS",
                 "Minimum Balance (₹)": data.totalBal,
                 "Interest Rate (%)": "",
-                "Monthly Interest (₹)": Math.round(data.totalInt * 100) / 100,
+                "Monthly Interest (₹)": data.totalInt,
                 "Formula": ""
             });
 

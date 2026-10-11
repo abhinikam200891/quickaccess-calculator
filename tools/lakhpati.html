@@ -104,7 +104,6 @@
                 <div class="form-group">
                     <label class="form-label">Installment Arrears Status</label>
                     <input type="text" id="calculatedSkipped" readonly class="form-control readonly-field" value="-">
-                    <input type="hidden" id="skippedValue" value="0">
                 </div>
             </div>
 
@@ -235,19 +234,16 @@
 
             document.getElementById("autoExpected").value = BankingCore.formatINR(stats.expectedTotal, { decimals: 0 });
 
-            if (receivedInput !== "") {
-                const skippedDisplay = document.getElementById("calculatedSkipped");
-                if (stats.skippedRaw > 0) {
-                    skippedDisplay.value = `${stats.skippedRaw.toFixed(1)} Months Due`;
-                    skippedDisplay.style.color = "#ef4444";
-                    skippedDisplay.style.backgroundColor = "#fef2f2";
-                } else {
-                    skippedDisplay.value = "Up to Date";
-                    skippedDisplay.style.color = "#10b981";
-                    skippedDisplay.style.backgroundColor = "#ecfdf5";
-                }
-                
-                document.getElementById("skippedValue").value = stats.skippedRounded;
+            // A blank "Received" means nothing collected yet, which is how calculateCumulative() treats it too
+            const skippedDisplay = document.getElementById("calculatedSkipped");
+            if (stats.skippedRaw > 0) {
+                skippedDisplay.value = `${stats.skippedRaw.toFixed(1)} Months Due`;
+                skippedDisplay.style.color = "#ef4444";
+                skippedDisplay.style.backgroundColor = "#fef2f2";
+            } else {
+                skippedDisplay.value = "Up to Date";
+                skippedDisplay.style.color = "#10b981";
+                skippedDisplay.style.backgroundColor = "#ecfdf5";
             }
         }
     }
@@ -261,7 +257,6 @@
     function calculateCumulative() {
         const monthlyAmount = document.getElementById("amount").value;
         const ratePercent = parseFloat(document.getElementById("rate").value);
-        const skippedCount = parseInt(document.getElementById("skippedValue").value);
         const openDateInput = document.getElementById("openDate").value;
         const receivedAmount = document.getElementById("received").value;
 
@@ -271,7 +266,6 @@
             monthlyAmount: monthlyAmount,
             rate: ratePercent,
             receivedAmount: receivedAmount,
-            skippedCount: isNaN(skippedCount) ? null : skippedCount,
             refDate: new Date()
         });
 

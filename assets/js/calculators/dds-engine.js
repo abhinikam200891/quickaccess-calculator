@@ -45,7 +45,8 @@
    */
   function parseDate(val) {
     if (!val) return null;
-    if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+    // Copy, so callers can setHours() without changing the caller's (or the row's) Date
+    if (val instanceof Date) return isNaN(val.getTime()) ? null : new Date(val.getTime());
     if (BankingCore && BankingCore.dates && BankingCore.dates.parse) {
       return BankingCore.dates.parse(val);
     }
@@ -130,13 +131,12 @@
    * @returns {Object} { openingBal, finalTxRows }
    */
   DdsEngine.prepareTransactions = function (rows, userDate, withdrawalDate) {
+    // Parse once with the banking parser so text dates like "13/05/2026" are kept and sorted correctly
     const validRows = rows
-      .filter(r => {
-        if (!r.POSTDATE) return false;
-        const rDate = parseDate(r.POSTDATE);
-        return rDate && !isNaN(rDate) && rDate <= withdrawalDate;
-      })
-      .sort((a, b) => new Date(a.POSTDATE) - new Date(b.POSTDATE));
+      .map(r => ({ r: r, d: parseDate(r.POSTDATE) }))
+      .filter(x => x.d && x.d <= withdrawalDate)
+      .sort((a, b) => a.d - b.d)
+      .map(x => x.r);
 
     let runningBalance = 0;
     let openingBal = 0;

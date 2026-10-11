@@ -237,11 +237,9 @@ document.addEventListener('DOMContentLoaded', () => {
         sumFinal: document.getElementById('sumFinal')
     };
 
-    const DAYS_IN_MONTH = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    
     // Init - Set Withdrawal Date to Today by default
     const today = new Date();
-    el.withdrawDate.valueAsDate = today;
+    el.withdrawDate.value = BankingCore.dates.todayISO(today);
     
     el.dateTag.innerText = `📅 ${today.toLocaleDateString('en-GB')}`;
 
@@ -288,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateDuration() {
         // Calculate based on inputs
-        const wd = el.withdrawDate.value ? new Date(el.withdrawDate.value) : new Date();
+        const wd = BankingCore.dates.parse(el.withdrawDate.value) || new Date();
         const res = calcDuration(el.openDate.value, wd);
         
         if (res.ok) {
@@ -301,16 +299,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Helper to get End of Month Date
-    function getEndOfMonth(year, monthIndex) {
-        return new Date(year, monthIndex + 1, 0);
-    }
-
     function processData() {
         try {
             // Validation
             if (!el.withdrawDate.value) throw new Error("Please select a Withdrawal Date");
-            const withdrawalDate = new Date(el.withdrawDate.value);
+            const withdrawalDate = BankingCore.dates.parse(el.withdrawDate.value);
+            if (!withdrawalDate) throw new Error("Invalid Withdrawal Date");
             // Include entire withdrawal day in calculation logic
             withdrawalDate.setHours(23, 59, 59, 999);
 
@@ -344,102 +338,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                         
                     const data = XLSX.utils.sheet_to_json(sheet, { range: headerIdx });
                                         
-                    // Filter Logic
-                    const [y, m, d] = el.openDate.value.split('-');
-                    const userDate = new Date(y, m-1, d);
+                    const userDate = BankingCore.dates.parse(el.openDate.value);
                     userDate.setHours(0,0,0,0);
 
-                    // 1. Sort Data by Date first AND Filter by Withdrawal Date
-                    const validRows = data
-                        .filter(r => {
-                            if (!r.POSTDATE) return false;
-                            const rDate = new Date(r.POSTDATE);
-                            // Filter valid dates and ensure they are NOT after withdrawal date
-                            return !isNaN(rDate) && rDate <= withdrawalDate; 
-                        })
-                        .sort((a, b) => new Date(a.POSTDATE) - new Date(b.POSTDATE));
-
-                    const finalTxRows = [];
-                    let runningBalance = 0;
-                    let openingBal = 0;
-                    let lastProcessedDate = userDate; 
-
-                    // 2. Determine Opening Balance
-                    validRows.forEach(row => {
-                        const rDate = new Date(row.POSTDATE);
-                        rDate.setHours(0,0,0,0);
-                                                
-                        if (rDate <= userDate) {
-                            // Find closing balance on opening date
-                            let b = Number(row.Balance || 0);
-                            let b1 = Number(row['Balance_1']);
-                            if (!isNaN(b1) && ((b===0 && b1!==0) || (b1!==0 && b!==b1))) b = b1;
-                            runningBalance = b;
-                            openingBal = b;
-                        }
-                    });
-
-                    // 3. Process Transactions AND Fill Gaps (Carried Forward)
-                    const futureRows = validRows.filter(r => {
-                          const rd = new Date(r.POSTDATE);
-                          rd.setHours(0,0,0,0);
-                          return rd > userDate;
-                        });
-
-                    futureRows.forEach(row => {
-                        const rowDate = new Date(row.POSTDATE);
-                        rowDate.setHours(0,0,0,0);
-
-                        // --- GAP FILLER LOGIC ---
-                        let nextExpectedDate = getEndOfMonth(lastProcessedDate.getFullYear(), lastProcessedDate.getMonth() + 1);
-                        nextExpectedDate.setHours(0,0,0,0);
-
-                        while (nextExpectedDate < rowDate && (nextExpectedDate.getMonth() !== rowDate.getMonth() || nextExpectedDate.getFullYear() !== rowDate.getFullYear())) {
-                            // Insert a "Missing" Row
-                            finalTxRows.push({
-                                POSTDATE: new Date(nextExpectedDate),
-                                Deposits: 0,
-                                Withdrawals: 0,
-                                CalculatedBalance: runningBalance,
-                                isAutoFilled: true
-                             });
-
-                            // Advance to next month
-                            lastProcessedDate = nextExpectedDate;
-                            nextExpectedDate = getEndOfMonth(lastProcessedDate.getFullYear(), lastProcessedDate.getMonth() + 1);
-                            nextExpectedDate.setHours(0,0,0,0);
-                        }
-                        // ------------------------
-
-                        // Update Balance with Actual Data
-                        runningBalance = runningBalance + Number(row.Deposits || 0) - Number(row.Withdrawals || 0);
-                        row.CalculatedBalance = runningBalance;
-                        row.isAutoFilled = false;
-                                                
-                        finalTxRows.push(row);
-                        lastProcessedDate = rowDate;
-                       });
-
-                    // --- NEW LOGIC: CARRY FORWARD BALANCE TILL WITHDRAWAL DATE MONTH ---
-                    let wdMonthKey = withdrawalDate.getFullYear() * 12 + withdrawalDate.getMonth();
-                    let lastMonthKey = lastProcessedDate.getFullYear() * 12 + lastProcessedDate.getMonth();
-
-                    while (lastMonthKey < wdMonthKey) {
-                        let nextExpectedDate = getEndOfMonth(lastProcessedDate.getFullYear(), lastProcessedDate.getMonth() + 1);
-                        nextExpectedDate.setHours(0,0,0,0);
-
-                        finalTxRows.push({
-                            POSTDATE: new Date(nextExpectedDate),
-                            Deposits: 0,
-                            Withdrawals: 0,
-                            CalculatedBalance: runningBalance,
-                            isAutoFilled: true
-                        });
-
-                        lastProcessedDate = nextExpectedDate;
-                        lastMonthKey = lastProcessedDate.getFullYear() * 12 + lastProcessedDate.getMonth();
-                    }
-                    // ------------------------------------------------------------------
+                    // Opening balance, carried-forward months and running balances come from the engine
+                    const { openingBal, finalTxRows } = getDdsEngine().prepareTransactions(data, userDate, withdrawalDate);
 
                     if (finalTxRows.length === 0) throw new Error("No transactions found after the Opening Date (upto Withdrawal Date).");
 

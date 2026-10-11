@@ -34,10 +34,14 @@
   BankingCore.round = function (value, decimals = 2) {
     const num = Number(value);
     if (isNaN(num) || !isFinite(num)) return 0;
+    const d = Math.trunc(Number(decimals) || 0);
     const sign = num < 0 ? -1 : 1;
     const absNum = Math.abs(num);
-    const factor = Math.pow(10, decimals);
-    const roundedAbs = Math.round((absNum + Number.EPSILON) * factor) / factor;
+    if (absNum >= 1e15) return num;
+    if (String(absNum).indexOf('e') !== -1) return d >= 7 ? num : 0; // tiny values like 1e-7
+    // Shift the decimal point in the string form so 1.005 rounds to 1.01 (multiplying gives 100.4999...).
+    // Half rounds away from zero, as in Excel; negative decimals round to tens/hundreds.
+    const roundedAbs = Number(Math.round(Number(absNum + 'e' + d)) + 'e' + (-d));
     return roundedAbs === 0 ? 0 : sign * roundedAbs;
   };
 
@@ -310,6 +314,15 @@
     /**
      * Current Indian Financial Year (e.g., "2025-2026")
      */
+    /**
+     * Local calendar date as YYYY-MM-DD (for <input type="date">).
+     * Unlike toISOString(), this does not roll back a day between 00:00 and 05:30 IST.
+     */
+    todayISO: function (date = new Date()) {
+      const d = date instanceof Date ? date : new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    },
+
     getFinancialYear: function (date = new Date()) {
       const d = BankingCore.dates.parse(date) || new Date();
       const month = d.getMonth() + 1; // 1-12
