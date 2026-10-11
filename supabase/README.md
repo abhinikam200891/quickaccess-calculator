@@ -9,7 +9,7 @@ The Loan Charges tool reads its fee schemes from two tables.
 
 ## Applying the migration
 
-1. Supabase Dashboard → **SQL Editor** → paste `migrations/20261011_loan_schemes_v2.sql` → **Run**.
+1. Supabase Dashboard → **SQL Editor** → paste `migrations/20261011000000_loan_schemes_v2.sql` → **Run**.
 2. Check: `select count(*) from loan_schemes;` → 15, `select count(*) from loan_scheme_fields;` → 234.
 3. Open Loan Charges. Scheme names now start with the code, e.g. `(1602) OLD VEHICLE LOAN`.
    Until step 1 is done, the app keeps using the old `loan_products` / `loan_fields` tables.
@@ -41,3 +41,14 @@ A formula that uses an unknown key or function shows `ERR` in red on that line, 
 ## Access
 
 Row Level Security allows the public (anon) key to **read active schemes only**. There are no write policies, so edits are possible only from the dashboard. The planned admin page will need its own login and write policies.
+
+## Applying changes with the CLI
+
+The project is linked (`npx supabase link --project-ref cuuupfgivmpybetgdrdn`). New SQL goes in
+`migrations/<YYYYMMDDHHMMSS>_<name>.sql`, then:
+
+```
+npx supabase migration list --linked   # what is applied remotely
+npx supabase db push --linked          # apply new migrations
+npx supabase db advisors --linked      # security / performance checks
+```
