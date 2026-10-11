@@ -306,11 +306,8 @@ document.addEventListener('DOMContentLoaded', () => {
             withdrawalDate.setHours(23, 59, 59, 999);
 
             const dur = calcDuration(el.openDate.value, withdrawalDate);
-            if (!dur.ok) throw new Error(dur.msg);
-            
-            // Rule: 6 months + 1 day
-            if (dur.totalMonths < 6 || (dur.totalMonths === 6 && dur.days === 0))
-                throw new Error("Policy Constraint: Minimum duration is 6 Months & 1 Day.");
+            const policy = getDdsEngine().validatePolicy(dur);
+            if (!policy.valid) throw new Error(policy.error);
 
             const limit = Number(el.dailyLimit.value);
             if (isNaN(limit) || limit <= 0) throw new Error("Please enter a valid Daily Limit Amount.");

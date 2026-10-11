@@ -213,6 +213,7 @@
 </div>
 
 <script src="../assets/js/banking-core.js"></script>
+<script src="../assets/js/calculators/arb-overdue-engine.js"></script>
 <script>
     document.getElementById('globalDate').innerText = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -222,18 +223,19 @@
         const recv = parseFloat(document.getElementById('amtReceived').value) || 0;
         const clos = parseFloat(document.getElementById('closerBal').value) || 0;
 
-        const discP = balP - sanc;
-        const discC = clos - recv;
+        const audit = BankingArbOverdueEngine.auditSavlat({
+            balancePrastav: balP, sanctionAmount: sanc, amountReceived: recv, closingBalance: clos
+        });
 
-        document.getElementById('res1').innerText = BankingCore.formatINR(discP);
-        document.getElementById('res2').innerText = BankingCore.formatINR(discC);
+        document.getElementById('res1').innerText = BankingCore.formatINR(audit.prastavDiscount);
+        document.getElementById('res2').innerText = BankingCore.formatINR(audit.closingDiscount);
 
         const resDiv = document.getElementById('finalValidatorResult');
         const vInputs = ['balPrastav', 'sanctionAmt', 'amtReceived', 'closerBal'];
         
         if (vInputs.every(i => document.getElementById(i).value !== "")) {
             resDiv.style.display = 'block';
-            if (discC <= discP) {
+            if (audit.withinLimit) {
                 resDiv.innerText = "✓ RESULT: AUDIT OK (Savlat within Prastav limit)";
                 resDiv.className = "status-badge-lg status-ok";
             } else {
@@ -252,23 +254,20 @@
 
         if (!sancDateStr || isNaN(principal) || isNaN(rate) || principal <= 0) return;
 
-        const sancDate = BankingCore.dates.parse(sancDateStr);
-        if (!sancDate) return;
-        // Read the clock on every calculation: the page stays open in the shell across days
-        const today = new Date();
-        if (sancDate > today) {
-            if (window.BankingCore) BankingCore.toast.error("Sanction date cannot be in the future!");
-            else alert("Sanction date cannot be in the future!");
+        // "To" date is read on every calculation: the page stays open in the shell across days
+        const result = BankingArbOverdueEngine.overdueInterest({ principal: principal, rate: rate, fromDate: sancDateStr, toDate: new Date() });
+        if (!result.ok) {
+            BankingCore.toast.error(result.error);
             return;
         }
-
-        const days = BankingCore.dates ? BankingCore.dates.daysBetween(sancDate, today) : Math.floor((today.getTime() - sancDate.getTime()) / (1000 * 3600 * 24));
-        const interest = BankingCore.round((principal * (days / 365) * (rate / 100)), 2);
+        const days = result.days;
+        const interest = result.interest;
+        const basis = BankingArbOverdueEngine.DEFAULT_CONFIG.dayBasis;
 
         document.getElementById('arbResults').style.display = 'block';
         document.getElementById('totalDays').innerText = `${days} Days`;
         document.getElementById('overdueInterest').innerText = BankingCore.formatINR(interest);
-        document.getElementById('combinedFormula').innerText = `Formula: ${principal.toFixed(2)} × (${days} / 365) × ${rate}% = ₹ ${interest.toFixed(2)}`;
+        document.getElementById('combinedFormula').innerText = `Formula: ${principal.toFixed(2)} × (${days} / ${basis}) × ${rate}% = ₹ ${interest.toFixed(2)}`;
     }
 
     window.onload = function() {

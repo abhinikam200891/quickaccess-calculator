@@ -39,28 +39,9 @@
    * @returns {Date|null}
    */
   function parseDate(val) {
-    if (!val) return null;
-    if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
-    if (typeof val === 'string') {
-      const parts = val.split('-');
-      if (parts.length === 3) {
-        if (parts[0].length === 4) { // YYYY-MM-DD
-          const y = parseInt(parts[0], 10), m = parseInt(parts[1], 10) - 1, d = parseInt(parts[2], 10);
-          const dt = new Date(y, m, d);
-          return (dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d) ? dt : null;
-        } else { // DD-MM-YYYY
-          const d = parseInt(parts[0], 10), m = parseInt(parts[1], 10) - 1, y = parseInt(parts[2], 10);
-          const dt = new Date(y, m, d);
-          return (dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d) ? dt : null;
-        }
-      }
-    }
-    if (BankingCore && BankingCore.dates && BankingCore.dates.parse) {
-      return BankingCore.dates.parse(val);
-    }
-    const d = new Date(val);
-    return isNaN(d.getTime()) ? null : d;
+    return BankingCore.dates.parse(val);
   }
+
 
   /**
    * Compute D1 Date (NPA Date + 12 Months / 1 Year)

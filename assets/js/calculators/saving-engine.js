@@ -33,13 +33,7 @@
   };
 
   function parseDate(val) {
-    if (!val) return null;
-    if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
-    if (BankingCore && BankingCore.dates && BankingCore.dates.parse) {
-      return BankingCore.dates.parse(val);
-    }
-    const d = new Date(val);
-    return isNaN(d.getTime()) ? null : d;
+    return BankingCore.dates.parse(val);
   }
 
   function cleanAmount(val) {

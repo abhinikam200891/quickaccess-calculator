@@ -39,9 +39,9 @@
    * @returns {number}
    */
   LakhpatiEngine.getMonthDifference = function (d1, d2) {
-    let date1 = d1 instanceof Date ? d1 : (BankingCore && BankingCore.dates ? BankingCore.dates.parse(d1) : new Date(d1));
-    let date2 = d2 instanceof Date ? d2 : (BankingCore && BankingCore.dates ? BankingCore.dates.parse(d2) : new Date(d2));
-    if (!date1 || !date2 || isNaN(date1.getTime()) || isNaN(date2.getTime())) return 0;
+    const date1 = BankingCore.dates.parse(d1);
+    const date2 = BankingCore.dates.parse(d2);
+    if (!date1 || !date2) return 0;
 
     let months = (date2.getFullYear() - date1.getFullYear()) * 12;
     months -= date1.getMonth();

@@ -200,7 +200,8 @@
         const d2 = BankingCore.dates.parse(eVal);
         if (!d1 || !d2) return;
 
-        if (d1 > d2) {
+        const diff = BankingCore.dates.diffYMD(d1, d2);
+        if (!diff) {
             BankingCore.toast.error("Start date cannot be after End date.");
             return;
         }
@@ -209,27 +210,11 @@
         document.getElementById('convention-tag').innerText = inclusive ? "Both Inclusive (+1)" : "Standard (Exclusive)";
 
         // Years, Months, Days Breakdown
-        let Y = d2.getFullYear() - d1.getFullYear();
-        let M = d2.getMonth() - d1.getMonth();
-        let D = d2.getDate() - d1.getDate();
-
-        if (D < 0) {
-            M--;
-            const prevMonthDays = new Date(d2.getFullYear(), d2.getMonth(), 0).getDate();
-            D += prevMonthDays;
-        }
-        if (M < 0) {
-            Y--;
-            M += 12;
-        }
-
-        // Total Days via BankingCore
-        const totalDays = (window.BankingCore && BankingCore.dates) 
-            ? BankingCore.dates.daysBetween(d1, d2, inclusive)
-            : Math.round(Math.abs((Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate()) - Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate())) / 86400000)) + (inclusive ? 1 : 0);
+        const Y = diff.years, M = diff.months, D = diff.days;
+        const totalDays = BankingCore.dates.daysBetween(d1, d2, inclusive);
 
         // Total Months & Weeks
-        const totalMonths = (Y * 12) + M;
+        const totalMonths = diff.totalMonths;
         const totalWeeks = Math.floor(totalDays / 7);
 
         // Update DOM
@@ -241,10 +226,8 @@
         document.getElementById('rWeeks').innerText = totalWeeks;
         document.getElementById('rTD').innerText = `${totalDays} Days`;
 
-        if (window.BankingCore) {
-            document.getElementById('startFY').innerText = `FY ${BankingCore.dates.getFinancialYear(d1)}`;
-            document.getElementById('endFY').innerText = `FY ${BankingCore.dates.getFinancialYear(d2)}`;
-        }
+        document.getElementById('startFY').innerText = `FY ${BankingCore.dates.getFinancialYear(d1)}`;
+        document.getElementById('endFY').innerText = `FY ${BankingCore.dates.getFinancialYear(d2)}`;
     }
 
     function resetForm() {

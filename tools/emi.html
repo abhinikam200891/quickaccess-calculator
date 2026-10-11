@@ -271,6 +271,7 @@
 </div>
 
 <script src="../assets/js/banking-core.js"></script>
+<script src="../assets/js/calculators/emi-engine.js"></script>
 <script>
     let currentSchedule = [];
 
@@ -296,25 +297,13 @@
         const annualRate = parseFloat(document.getElementById('rate').value) || 0;
         const n = parseInt(document.getElementById('tenureMonths').value) || 0;
 
-        if (P <= 0 || n <= 0) return;
+        const result = BankingEmiEngine.calculate({ principal: P, annualRate: annualRate, months: n });
+        if (!result.ok) return;
 
-        let emi = 0;
-        let r = 0;
-
-        if (annualRate > 0) {
-            r = annualRate / 12 / 100;
-            const factor = Math.pow(1 + r, n);
-            const exactEmi = P * r * (factor / (factor - 1));
-            emi = BankingCore.round(exactEmi, 0);
-        } else {
-            // Zero interest loan handling
-            emi = BankingCore.round(P / n, 0);
-        }
-
-        // Totals come from the schedule, whose last instalment absorbs the rounding of the EMI
-        const sched = generateSchedule(P, r, emi, n);
-        const totalInterest = sched.interest;
-        const totalPayment = sched.principal + sched.interest;
+        const emi = result.emi;
+        const totalInterest = result.totalInterest;
+        const totalPayment = result.totalPayment;
+        renderSchedule(result);
 
         // Update displays with formatted currency
         document.getElementById('disp-emi').innerText = BankingCore.formatINR(emi, { decimals: 0 });
@@ -345,61 +334,32 @@
         }
     }
 
-    function generateSchedule(P, r, emi, n) {
-        let balance = P;
-        let rowsHtml = '';
-        currentSchedule = [];
+    function renderSchedule(result) {
+        const fmt = n => BankingCore.formatINR(n, { showSymbol: false, decimals: 0 });
+        currentSchedule = result.schedule;
 
-        let totalPrincipalPaid = 0;
-        let totalInterestPaid = 0;
-
-        for (let i = 1; i <= n; i++) {
-            let interest = BankingCore.round(balance * r, 0);
-            let principal = emi - interest;
-
-            if (i === n || balance - principal < 0) {
-                principal = balance;
-                emi = principal + interest;
-                balance = 0;
-            } else {
-                balance = balance - principal;
-            }
-
-            totalPrincipalPaid += principal;
-            totalInterestPaid += interest;
-
-            currentSchedule.push({
-                month: i,
-                principal: principal,
-                interest: interest,
-                total: principal + interest,
-                balance: balance
-            });
-
-            rowsHtml += `
+        let rowsHtml = result.schedule.map(row => `
                 <tr>
-                    <td><strong>Month ${i}</strong></td>
-                    <td class="num">${BankingCore.formatINR(principal, { showSymbol: false, decimals: 0 })}</td>
-                    <td class="num" style="color: var(--bank-gold-hover);">${BankingCore.formatINR(interest, { showSymbol: false, decimals: 0 })}</td>
-                    <td class="num" style="font-weight: 600;">${BankingCore.formatINR(principal + interest, { showSymbol: false, decimals: 0 })}</td>
-                    <td class="num" style="font-weight: 700; color: var(--bank-navy);">${BankingCore.formatINR(balance, { showSymbol: false, decimals: 0 })}</td>
+                    <td><strong>Month ${row.month}</strong></td>
+                    <td class="num">${fmt(row.principal)}</td>
+                    <td class="num" style="color: var(--bank-gold-hover);">${fmt(row.interest)}</td>
+                    <td class="num" style="font-weight: 600;">${fmt(row.total)}</td>
+                    <td class="num" style="font-weight: 700; color: var(--bank-navy);">${fmt(row.balance)}</td>
                 </tr>
-            `;
-        }
+            `).join('');
 
         // Totals Row
         rowsHtml += `
             <tr class="row-total">
-                <td>TOTALS (${n} Months)</td>
-                <td class="num">${BankingCore.formatINR(totalPrincipalPaid, { decimals: 0 })}</td>
-                <td class="num">${BankingCore.formatINR(totalInterestPaid, { decimals: 0 })}</td>
-                <td class="num">${BankingCore.formatINR(totalPrincipalPaid + totalInterestPaid, { decimals: 0 })}</td>
+                <td>TOTALS (${result.schedule.length} Months)</td>
+                <td class="num">${BankingCore.formatINR(result.totalPrincipal, { decimals: 0 })}</td>
+                <td class="num">${BankingCore.formatINR(result.totalInterest, { decimals: 0 })}</td>
+                <td class="num">${BankingCore.formatINR(result.totalPayment, { decimals: 0 })}</td>
                 <td class="num">₹ 0</td>
             </tr>
         `;
 
         document.getElementById('table-body').innerHTML = rowsHtml;
-        return { principal: totalPrincipalPaid, interest: totalInterestPaid };
     }
 
     function drawChart(principal, interest) {

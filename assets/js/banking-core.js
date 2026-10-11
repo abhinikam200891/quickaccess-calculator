@@ -245,7 +245,8 @@
      */
     parse: function (str) {
       if (!str && str !== 0) return null;
-      if (str instanceof Date) return isNaN(str.getTime()) ? null : str;
+      // Return a copy so callers can setHours() without changing the caller's Date
+      if (str instanceof Date) return isNaN(str.getTime()) ? null : new Date(str.getTime());
       
       if (typeof str === 'number') {
         return (str >= 10000 && str <= 100000) ? BankingCore.dates.fromExcelSerial(str) : null;
@@ -314,6 +315,33 @@
     /**
      * Current Indian Financial Year (e.g., "2025-2026")
      */
+    /**
+     * Calendar difference from d1 to d2 as completed years, months and days
+     * (e.g. 15/01/2025 -> 14/03/2026 = 1 year 1 month 27 days). Time of day is ignored.
+     * @returns {{years:number, months:number, days:number, totalMonths:number}|null} null if invalid or d2 < d1
+     */
+    diffYMD: function (d1, d2) {
+      const a = BankingCore.dates.parse(d1);
+      const b = BankingCore.dates.parse(d2);
+      if (!a || !b) return null;
+      a.setHours(0, 0, 0, 0);
+      b.setHours(0, 0, 0, 0);
+      if (b < a) return null;
+
+      let years = b.getFullYear() - a.getFullYear();
+      let months = b.getMonth() - a.getMonth();
+      let days = b.getDate() - a.getDate();
+      if (days < 0) {
+        months--;
+        days += new Date(b.getFullYear(), b.getMonth(), 0).getDate(); // days in the month before d2
+      }
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+      return { years: years, months: months, days: days, totalMonths: years * 12 + months };
+    },
+
     /**
      * Local calendar date as YYYY-MM-DD (for <input type="date">).
      * Unlike toISOString(), this does not roll back a day between 00:00 and 05:30 IST.

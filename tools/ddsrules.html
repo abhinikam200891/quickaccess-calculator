@@ -220,7 +220,7 @@
             <p class="header-sub">Simple guide to how daily pigmy deposit interest is calculated</p>
         </div>
         <div class="no-print" style="display: flex; gap: 8px;">
-            <a href="dds.html" class="btn btn-primary btn-sm" onclick="goBackToCalculator(event)" style="font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+            <a href="dds.html" class="btn btn-primary btn-sm" style="font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                 Back to 🧮 DDS Interest Calculator
             </a>
             <button class="btn btn-outline btn-sm" onclick="window.print()">
@@ -264,7 +264,7 @@
             <div>
                 <div class="item-label">3% Deduction Window Starts</div>
                 <div class="item-val" id="chkCutoffText" style="color: #dc2626;">-</div>
-                <div class="item-sub" style="font-size: 0.75rem;">Last 6 months before withdrawal</div>
+                <div class="item-sub" style="font-size: 0.75rem;">Last <span data-dds="commissionCutoffMonths">6</span> months before withdrawal</div>
             </div>
             <div>
                 <div class="item-label">Monthly Limit in 30-Day Month</div>
@@ -277,11 +277,11 @@
     <!-- Rule 1: Minimum Duration Policy -->
     <div class="rule-card" style="border-left: 4px solid var(--status-danger);">
         <div class="rule-header">
-            <h2 class="rule-title">⏳ 1. Minimum Time Required (6 Months & 1 Day)</h2>
+            <h2 class="rule-title">⏳ 1. Minimum Time Required (<span data-dds="minDurationMonths">6</span> Months & <span data-dds="minDurationDays">1</span> Day)</h2>
             <span class="badge-red">Eligibility Rule</span>
         </div>
         <p class="rule-text">
-            To earn interest on a Daily Deposit account, the account must remain open for <strong>at least 6 months and 1 day</strong>.
+            To earn interest on a Daily Deposit account, the account must remain open for <strong>at least <span data-dds="minDurationMonths">6</span> months and <span data-dds="minDurationDays">1</span> day</strong>.
         </p>
         <table class="rule-table">
             <thead>
@@ -294,21 +294,21 @@
             </thead>
             <tbody>
                 <tr>
-                    <td><strong>Less than 6 Months</strong></td>
+                    <td><strong>Less than <span data-dds="minDurationMonths">6</span> Months</strong></td>
                     <td><span class="badge-red">Not Eligible</span></td>
                     <td><strong>0.00%</strong></td>
                     <td>Closed too early. No interest is paid.</td>
                 </tr>
                 <tr>
-                    <td><strong>Exactly 6 Months & 0 Days</strong></td>
+                    <td><strong>Exactly <span data-dds="minDurationMonths">6</span> Months & 0 Days</strong></td>
                     <td><span class="badge-red">Not Eligible</span></td>
                     <td><strong>0.00%</strong></td>
                     <td>Needs 1 more day to qualify for interest.</td>
                 </tr>
                 <tr>
-                    <td><strong>6 Months & 1 Day or more</strong></td>
+                    <td><strong><span data-dds="minDurationMonths">6</span> Months & <span data-dds="minDurationDays">1</span> Day or more</strong></td>
                     <td><span class="badge-green">Eligible</span></td>
-                    <td><strong>2.00% or 5.00%</strong></td>
+                    <td><strong><span data-dds="shortTermRate" data-dec="2">2.00</span>% or <span data-dds="longTermRate" data-dec="2">5.00</span>%</strong></td>
                     <td>Qualifies for full interest calculation.</td>
                 </tr>
             </tbody>
@@ -318,7 +318,7 @@
     <!-- Rule 2: Interest Rate Slabs -->
     <div class="rule-card" style="border-left: 4px solid var(--bank-gold);">
         <div class="rule-header">
-            <h2 class="rule-title">📈 2. Interest Rate (2% vs 5%)</h2>
+            <h2 class="rule-title">📈 2. Interest Rate (<span data-dds="shortTermRate">2</span>% vs <span data-dds="longTermRate">5</span>%)</h2>
             <span class="badge-gold">Rate Slabs</span>
         </div>
         <p class="rule-text">
@@ -326,18 +326,18 @@
         </p>
         <div class="rule-grid">
             <div class="item-box" style="border-color: #bfdbfe;">
-                <div class="item-label" style="color: #1e40af;">Up to 1 Year (&le; 12 Months)</div>
-                <div class="item-val" style="color: #1d4ed8;">2.00% per year</div>
-                <div class="item-sub">For accounts open between <strong>6 months 1 day</strong> and <strong>12 months</strong>.</div>
+                <div class="item-label" style="color: #1e40af;">Up to 1 Year (&le; <span data-dds="longTermAfterMonths">12</span> Months)</div>
+                <div class="item-val" style="color: #1d4ed8;"><span data-dds="shortTermRate" data-dec="2">2.00</span>% per year</div>
+                <div class="item-sub">For accounts open between <strong><span data-dds="minDurationMonths">6</span> months <span data-dds="minDurationDays">1</span> day</strong> and <strong><span data-dds="longTermAfterMonths">12</span> months</strong>.</div>
             </div>
             <div class="item-box" style="border-color: #fde68a;">
-                <div class="item-label" style="color: #b45309;">More than 1 Year (&gt; 12 Months)</div>
-                <div class="item-val" style="color: #b45309;">5.00% per year</div>
-                <div class="item-sub">For accounts open for <strong>12 months and 1 day</strong> or longer.</div>
+                <div class="item-label" style="color: #b45309;">More than 1 Year (&gt; <span data-dds="longTermAfterMonths">12</span> Months)</div>
+                <div class="item-val" style="color: #b45309;"><span data-dds="longTermRate" data-dec="2">5.00</span>% per year</div>
+                <div class="item-sub">For accounts open for <strong><span data-dds="longTermAfterMonths">12</span> months and 1 day</strong> or longer.</div>
             </div>
         </div>
         <div class="tip-box">
-            💡 <strong>Helpful Tip:</strong> An account closed at exactly 12 months earns <strong>2.00%</strong>. If kept for just <strong>1 extra day</strong> (12 months and 1 day), the rate increases to <strong>5.00%</strong> for the entire duration!
+            💡 <strong>Helpful Tip:</strong> An account closed at exactly <span data-dds="longTermAfterMonths">12</span> months earns <strong><span data-dds="shortTermRate" data-dec="2">2.00</span>%</strong>. If kept for just <strong>1 extra day</strong> (<span data-dds="longTermAfterMonths">12</span> months and 1 day), the rate increases to <strong><span data-dds="longTermRate" data-dec="2">5.00</span>%</strong> for the entire duration!
         </div>
     </div>
 
@@ -357,36 +357,36 @@
         </ul>
     </div>
 
-    <!-- Rule 4: 3% Agent Commission Deduction -->
+    <!-- Rule 4: <span data-dds="commissionPct">3</span>% Agent Commission Deduction -->
     <div class="rule-card" style="border-left: 4px solid var(--status-danger);">
         <div class="rule-header">
-            <h2 class="rule-title">✂️ 4. 3% Agent Commission Recovery</h2>
+            <h2 class="rule-title">✂️ 4. <span data-dds="commissionPct">3</span>% Agent Commission Recovery</h2>
             <span class="badge-red">Deduction Rule</span>
         </div>
         <p class="rule-text">
-            The bank pays a 3% commission to the daily collection agent. If you deposit extra money beyond your monthly limit, a <strong>3% deduction</strong> is taken from your interest on that extra amount.
+            The bank pays a <span data-dds="commissionPct">3</span>% commission to the daily collection agent. If you deposit extra money beyond your monthly limit, a <strong>3% deduction</strong> is taken from your interest on that extra amount.
         </p>
         <p class="rule-text">
-            <strong>Applies only to the last 6 months:</strong> This deduction is only made on extra deposits made during the <strong>last 6 months before withdrawal</strong>. Extra deposits made earlier than the last 6 months are completely free of deduction (no penalty).
+            <strong>Applies only to the last <span data-dds="commissionCutoffMonths">6</span> months:</strong> This deduction is only made on extra deposits made during the <strong>last <span data-dds="commissionCutoffMonths">6</span> months before withdrawal</strong>. Extra deposits made earlier than the last <span data-dds="commissionCutoffMonths">6</span> months are completely free of deduction (no penalty).
         </p>
         <table class="rule-table">
             <thead>
                 <tr>
                     <th>When Extra Deposit Was Made</th>
-                    <th>Is 3% Commission Deducted?</th>
+                    <th>Is <span data-dds="commissionPct">3</span>% Commission Deducted?</th>
                     <th>Rule Explanation</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td><strong>Earlier than the last 6 months</strong></td>
+                    <td><strong>Earlier than the last <span data-dds="commissionCutoffMonths">6</span> months</strong></td>
                     <td><span class="badge-green">NO (₹0 Deduction)</span></td>
                     <td>Older savings are protected; no commission is deducted.</td>
                 </tr>
                 <tr>
-                    <td><strong>During the last 6 months</strong></td>
-                    <td><span class="badge-red">YES (3% on extra amount)</span></td>
-                    <td>3% is recovered from interest (<code>Extra Amount &times; 3%</code>).</td>
+                    <td><strong>During the last <span data-dds="commissionCutoffMonths">6</span> months</strong></td>
+                    <td><span class="badge-red">YES (<span data-dds="commissionPct">3</span>% on extra amount)</span></td>
+                    <td>3% is recovered from interest (<code>Extra Amount &times; <span data-dds="commissionPct">3</span>%</code>).</td>
                 </tr>
             </tbody>
         </table>
@@ -433,7 +433,7 @@
             <div style="font-size: 0.92rem; line-height: 1.8; color: var(--bank-navy);">
                 <strong>Step 1:</strong> Each month's interest = <code>(Adjusted Balance &times; Interest Rate) &divide; 1200</code><br>
                 <strong>Step 2:</strong> Total Gross Interest = Add up interest from all months + opening balance interest<br>
-                <strong>Step 3:</strong> <strong>Final Amount Paid = Total Gross Interest &minus; 3% Commission (if any)</strong>
+                <strong>Step 3:</strong> <strong>Final Amount Paid = Total Gross Interest &minus; <span data-dds="commissionPct">3</span>% Commission (if any)</strong>
             </div>
         </div>
     </div>
@@ -442,39 +442,41 @@
 
 <!-- Interactive Checker Script -->
 <script>
+    // Every rule value comes from DdsEngine.DEFAULT_CONFIG (assets/js/calculators/dds-engine.js)
     function getEngine() {
         return (window.BankingCore && window.BankingCore.calculators && window.BankingCore.calculators.dds) || window.BankingDdsEngine;
     }
 
+    // Fill the numbers in the rule text ([data-dds] spans) from the engine settings
+    function fillRuleText() {
+        const c = getEngine().DEFAULT_CONFIG;
+        const values = {
+            shortTermRate: c.shortTermRate,
+            longTermRate: c.longTermRate,
+            commissionPct: c.commissionRate * 100,
+            minDurationMonths: c.minDurationMonths,
+            minDurationDays: c.minDurationDays,
+            commissionCutoffMonths: c.commissionCutoffMonths,
+            longTermAfterMonths: c.longTermAfterMonths
+        };
+        document.querySelectorAll('[data-dds]').forEach(el => {
+            const v = values[el.dataset.dds];
+            if (v === undefined) return;
+            el.textContent = el.dataset.dec ? Number(v).toFixed(Number(el.dataset.dec)) : String(Number(Number(v).toFixed(2)));
+        });
+    }
+
     function runCheck() {
         const engine = getEngine();
+        const c = engine.DEFAULT_CONFIG;
         const openStr = document.getElementById('chkOpen').value;
         const withStr = document.getElementById('chkWithdraw').value;
         const limit = Number(document.getElementById('chkLimit').value) || 1000;
 
         if (!openStr || !withStr) return;
 
-        const openDate = new Date(openStr);
-        const withdrawDate = new Date(withStr);
-
-        let dur;
-        if (engine && engine.calcDuration) {
-            dur = engine.calcDuration(openStr, withdrawDate);
-        } else {
-            let y = withdrawDate.getFullYear() - openDate.getFullYear();
-            let m = withdrawDate.getMonth() - openDate.getMonth();
-            let d = withdrawDate.getDate() - openDate.getDate();
-            if (d < 0) {
-                m--;
-                d += new Date(withdrawDate.getFullYear(), withdrawDate.getMonth(), 0).getDate();
-            }
-            if (m < 0) {
-                y--;
-                m += 12;
-            }
-            const totalMonths = (y * 12) + m;
-            dur = { ok: true, totalMonths, days: d, text: `${totalMonths} Mths, ${d} Days` };
-        }
+        const withdrawDate = BankingCore.dates.parse(withStr);
+        const dur = engine.calcDuration(openStr, withdrawDate);
 
         const durEl = document.getElementById('chkDurText');
         const durBadge = document.getElementById('chkDurBadge');
@@ -485,7 +487,8 @@
 
         if (!dur.ok) {
             durEl.innerText = "Error";
-            durBadge.innerHTML = `<span class="badge-red">${dur.msg}</span>`;
+            durBadge.innerHTML = '<span class="badge-red"></span>';
+            durBadge.firstChild.textContent = dur.msg;
             rateEl.innerText = "-";
             rateBadge.innerHTML = "-";
             return;
@@ -494,37 +497,31 @@
         durEl.innerText = `${dur.totalMonths} Months, ${dur.days} Days`;
 
         // Policy Check
-        const isValid = (dur.totalMonths > 6) || (dur.totalMonths === 6 && dur.days >= 1);
-        if (isValid) {
-            durBadge.innerHTML = `<span class="badge-green">Eligible (&ge; 6 Months & 1 Day)</span>`;
-        } else {
-            durBadge.innerHTML = `<span class="badge-red">Not Eligible (&lt; 6 Months & 1 Day)</span>`;
-        }
+        const minText = `${c.minDurationMonths} Months & ${c.minDurationDays} Day`;
+        const isValid = engine.validatePolicy(dur).valid;
+        durBadge.innerHTML = isValid
+            ? `<span class="badge-green">Eligible (&ge; ${minText})</span>`
+            : `<span class="badge-red">Not Eligible (&lt; ${minText})</span>`;
 
         // Rate Check
-        const isLong = (dur.totalMonths > 12) || (dur.totalMonths === 12 && dur.days > 0);
-        const rate = isValid ? (isLong ? 5.0 : 2.0) : 0.0;
+        const isLong = engine.isLongTerm(dur.totalMonths, dur.days);
+        const rate = isValid ? engine.getRate(dur.totalMonths, dur.days) : 0;
         rateEl.innerText = `${rate.toFixed(2)}% per year`;
 
         if (!isValid) {
             rateBadge.innerHTML = `<span class="badge-red">0% (Closed too early)</span>`;
         } else if (isLong) {
-            rateBadge.innerHTML = `<span class="badge-gold">More than 1 year</span>`;
+            rateBadge.innerHTML = `<span class="badge-gold">More than ${c.longTermAfterMonths} months</span>`;
         } else {
-            rateBadge.innerHTML = `<span class="badge-blue">Up to 1 year</span>`;
+            rateBadge.innerHTML = `<span class="badge-blue">Up to ${c.longTermAfterMonths} months</span>`;
         }
 
-        // Cutoff Date (Trailing 6 months)
-        const cutoffDate = new Date(withdrawDate.getFullYear(), withdrawDate.getMonth() - 5, 1);
-        cutoffEl.innerText = cutoffDate.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+        // Start of the commission window
+        cutoffEl.innerText = engine.commissionCutoffDate(withdrawDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
 
-        // 30-day Cap with 31 days benefit
-        const cap30 = limit * 31;
+        // Monthly limit in a 30-day month (31-day benefit when the cap rule is on)
+        const cap30 = limit * (c.interestDaysCapRule ? 31 : 30);
         capEl.innerText = `₹${cap30.toLocaleString('en-IN')}`;
-    }
-
-    function goBackToCalculator(event) {
-        window.location.href = 'dds.html';
     }
 
     function notifyParentSubpage() {
@@ -539,6 +536,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         notifyParentSubpage();
+        fillRuleText();
         runCheck();
     });
 </script>

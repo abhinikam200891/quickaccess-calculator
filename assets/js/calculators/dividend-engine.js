@@ -62,16 +62,8 @@
         return { ok: false, error: "Date is required." };
       }
 
-      let dateObj;
-      if (params.actionDate instanceof Date) {
-        dateObj = params.actionDate;
-      } else if (BankingCore && BankingCore.dates && BankingCore.dates.parse) {
-        dateObj = BankingCore.dates.parse(params.actionDate);
-      } else {
-        dateObj = new Date(params.actionDate);
-      }
-
-      if (!dateObj || isNaN(dateObj.getTime())) {
+      const dateObj = BankingCore.dates.parse(params.actionDate);
+      if (!dateObj) {
         return { ok: false, error: "Invalid date format." };
       }
 

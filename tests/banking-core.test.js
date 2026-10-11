@@ -50,3 +50,21 @@ test('dates.getFinancialYear', () => {
   assert.equal(BankingCore.dates.getFinancialYear(new Date(2026, 2, 31)), '2025-2026');
   assert.equal(BankingCore.dates.getFinancialYear(new Date(2026, 3, 1)), '2026-2027');
 });
+
+test('dates.diffYMD: completed years, months and days', () => {
+  assert.deepEqual(BankingCore.dates.diffYMD('15/01/2025', '14/03/2026'), { years: 1, months: 1, days: 27, totalMonths: 13 });
+  assert.equal(BankingCore.dates.diffYMD('2026-01-02', '2026-01-01'), null);
+});
+
+test('dates.parse returns a copy of a Date', () => {
+  const d = new Date(2026, 0, 2, 15, 30);
+  const p = BankingCore.dates.parse(d);
+  p.setHours(0, 0, 0, 0);
+  assert.equal(d.getHours(), 15);
+});
+
+// Pending decision: for start days 29-31 the current method can return negative days
+// (31-Jan -> 1-Mar = 1 month, -1 days). Excel EDATE semantics would give 1 month 1 day.
+test('dates.diffYMD: month-end start dates (EDATE semantics)', { todo: 'awaiting decision on month-end rule' }, () => {
+  assert.deepEqual(BankingCore.dates.diffYMD('2024-01-31', '2024-03-01'), { years: 0, months: 1, days: 1, totalMonths: 1 });
+});
