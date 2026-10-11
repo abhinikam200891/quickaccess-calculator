@@ -1024,7 +1024,7 @@
     /** Scheme list as [{ id, title, fields }]; v1 entries have fields = null. */
     function fetchSchemes(onSuccess, onError) {
         const v2 = "/rest/v1/loan_schemes?select=code,name,loan_scheme_fields(key,label,kind,formula,default_value,options,in_total,sort_order)" +
-                   "&order=sort_order.asc,name.asc&loan_scheme_fields.order=sort_order.asc";
+                   "&active=eq.true&order=sort_order.asc,name.asc&loan_scheme_fields.order=sort_order.asc";
         restGet(v2)
             .then(rows => rows.map(r => ({
                 id: r.code,
