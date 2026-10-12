@@ -90,71 +90,12 @@
         .scheme-list-tools .form-control:focus { border-color: #818CF8; background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 3px rgba(var(--indigo-rgb), 0.25); }
         .scheme-list-tools .btn { white-space: nowrap; border-radius: 20px; padding: 6px 12px; }
         .scheme-list { list-style: none; margin: 0; padding: 0; }
-        .scheme-item {
-            position: relative;
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            width: calc(100% - 14px);
-            margin: 2px 7px;
-            padding: 6px 10px;
-            border: 1px solid transparent;
-            border-radius: 8px;
-            background: none;
-            font: inherit;
-            text-align: left;
-            cursor: pointer;
-            color: #94A3B8;
-            overflow: hidden;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .scheme-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            width: 3.5px;
-            height: 16px;
-            border-radius: 0 4px 4px 0;
-            background: #818CF8;
-            box-shadow: 0 0 10px #818CF8;
-            transform: translateY(-50%) scaleY(0);
-            opacity: 0;
-            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
-        }
-        .scheme-item .code {
-            flex-shrink: 0;
-            min-width: 40px;
-            padding: 3px 5px;
-            border-radius: 7px;
-            text-align: center;
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: #A5B4FC;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            transition: all 0.2s ease;
-        }
-        .scheme-item .name { flex: 1; min-width: 0; font-size: 0.8rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .scheme-item:hover {
-            color: #fff;
-            padding-left: 13px;
-            background: linear-gradient(90deg, rgba(var(--indigo-rgb), 0.18) 0%, rgba(var(--indigo-rgb), 0.03) 100%);
-            border-color: rgba(var(--indigo-rgb), 0.35);
-        }
-        .scheme-item:hover::before, .scheme-item.active::before { transform: translateY(-50%) scaleY(1.2); opacity: 1; }
-        .scheme-item:hover .code { border-color: rgba(var(--indigo-rgb), 0.6); background: rgba(var(--indigo-rgb), 0.22); }
-        .scheme-item.active {
-            color: #fff;
-            background: linear-gradient(90deg, rgba(var(--indigo-rgb), 0.26) 0%, rgba(var(--indigo-rgb), 0.07) 100%);
-            border-color: rgba(var(--indigo-rgb), 0.45);
-            box-shadow: 0 3px 14px rgba(var(--indigo-rgb), 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-        }
-        .scheme-item.active .name { font-weight: 600; }
-        .scheme-item.active .code { color: #fff; background: rgba(var(--indigo-rgb), 0.3); border-color: rgba(var(--indigo-rgb), 0.6); box-shadow: 0 0 14px rgba(var(--indigo-rgb), 0.45); }
-        .scheme-item.inactive .name { color: #64748B; text-decoration: line-through; }
-        .scheme-item .badge { font-size: 0.6rem; padding: 1px 6px; background: rgba(245, 158, 11, 0.15); color: #FBBF24; border-color: rgba(245, 158, 11, 0.4); }
+        /* Scheme items reuse .nav-item from main.css; only the code box and "inactive" look are added here */
+        .scheme-item .nav-icon-box.code { width: auto; min-width: 26px; padding: 0 5px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; }
+        .scheme-item .nav-text { min-width: 0; }
+        .scheme-item.inactive .nav-text { text-decoration: line-through; opacity: 0.6; }
+        .scheme-item .badge { flex-shrink: 0; margin-left: 6px; font-size: 0.6rem; padding: 1px 6px; background: rgba(245, 158, 11, 0.15); color: #FBBF24; border-color: rgba(245, 158, 11, 0.4); }
+        .scheme-item .nav-active-pill { margin-left: 6px; }
         .list-empty { font-size: 0.8rem; color: #64748B; padding: 14px 18px; }
         .sidebar-footer { position: relative; z-index: 2; padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
         .sidebar-footer .nav-item { text-decoration: none; --item-color: #38BDF8; --item-rgb: 56, 189, 248; }
