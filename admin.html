@@ -139,7 +139,7 @@
         }
         .input-wrap .reveal:hover { background: #F1F5F9; color: var(--ink); }
         .login-card .btn-primary { width: 100%; padding: 11px; margin-top: 6px; font-size: 0.9rem; }
-        .login-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 0.78rem; color: #64748B; }
+        .login-meta { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 0.78rem; color: #64748B; }
         .login-meta a { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); font-weight: 600; text-decoration: none; }
         .login-meta a:hover { color: var(--indigo); }
         .login-meta .secure { display: inline-flex; align-items: center; gap: 6px; }
@@ -172,6 +172,8 @@
         /* ==========================================================================
            SIDEBAR: scheme list (items reuse .nav-item from main.css)
            ========================================================================== */
+        /* Logo is not a link on this page */
+        .brand-info, .login-logo, .brand-logo-frame { cursor: default; }
         .sidebar-tools { position: relative; z-index: 2; padding: 12px 12px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
         .sidebar-tools .tools-head { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 10px; }
         .sidebar-tools .tools-head h3 { margin: 0; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94A3B8; }
@@ -593,13 +595,13 @@
 <!-- Sign in -->
 <section id="login-view" class="login-screen" hidden>
     <aside class="login-aside">
-        <a class="login-logo" href="index.html">
+        <div class="login-logo">
             <div class="brand-logo-frame"><img src="assets/img/logo.png" alt="" class="brand-logo"></div>
             <div>
                 <div class="brand-title"><span class="brand-title-main">QUICK</span><span class="brand-title-accent">ACCESS</span></div>
                 <div class="brand-sub"><span class="brand-sub-dot"></span><span class="brand-sub-text">Loan Admin</span></div>
             </div>
-        </a>
+        </div>
         <div class="login-pitch">
             <h1>Loan charges,<br>managed in one place.</h1>
             <p>Configure processing fees, stamp duty, insurance and every other deduction for each loan scheme. The Loan Charges calculator in every branch uses these values.</p>
@@ -634,7 +636,6 @@
             </div>
             <button type="submit" class="btn btn-primary" id="btn-login">Sign in</button>
             <div class="login-meta">
-                <a href="index.html"><svg class="ic ic-sm"><use href="#i-arrow-left"/></svg>Back to calculator</a>
                 <span class="secure"><svg class="ic ic-sm"><use href="#i-lock"/></svg>Secure session</span>
             </div>
         </form>
@@ -645,13 +646,13 @@
 <div class="app-shell" id="editor-view" hidden>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <a class="brand-info" href="index.html" title="Back to the calculator" style="text-decoration: none;">
+            <div class="brand-info">
                 <div class="brand-logo-frame"><img src="assets/img/logo.png" alt="Quick Access" class="brand-logo"></div>
                 <div class="brand-text-block">
                     <div class="brand-title"><span class="brand-title-main">QUICK</span><span class="brand-title-accent">ACCESS</span></div>
                     <div class="brand-sub"><span class="brand-sub-dot"></span><span class="brand-sub-text">Loan Admin</span></div>
                 </div>
-            </a>
+            </div>
         </div>
 
         <div class="sidebar-tools">
