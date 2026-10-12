@@ -376,18 +376,6 @@
     }
   }
 
-  // Compact the charge line rows (two steps) when they do not fit in the space left on screen;
-  // if even the most compact rows do not fit, the table scrolls under its fixed header.
-  function fitLines() {
-    const table = document.querySelector('.lines-table');
-    const box = document.querySelector('.lines-scroll');
-    if (!table || !box || $('scheme-editor').hidden) return;
-    table.classList.remove('dense', 'dense-2');
-    const overflows = () => box.scrollHeight > box.clientHeight + 1;
-    if (overflows()) table.classList.add('dense');
-    if (overflows()) table.classList.add('dense-2');
-  }
-
 
   function confirmDiscard() {
     return !isDirty() || window.confirm('You have unsaved changes. Discard them?');
@@ -586,7 +574,8 @@
       legend.appendChild(item);
     });
     refresh();
-    fitLines();
+    // Long labels and formulas: show the full text on hover
+    body.querySelectorAll('input.form-control').forEach(i => { i.title = i.value; i.addEventListener('input', () => { i.title = i.value; }); });
   }
 
   function moveLine(i, dir) {
@@ -970,9 +959,8 @@
     // Re-fit the scheme list and charge lines whenever their space changes (window resize, fonts, zoom)
     if (window.ResizeObserver) {
       new ResizeObserver(fitSchemeList).observe($('scheme-list').parentElement);
-      new ResizeObserver(fitLines).observe(document.querySelector('.lines-scroll'));
     } else {
-      window.addEventListener('resize', () => { fitSchemeList(); fitLines(); });
+      window.addEventListener('resize', fitSchemeList);
     }
     window.addEventListener('beforeunload', e => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
 
