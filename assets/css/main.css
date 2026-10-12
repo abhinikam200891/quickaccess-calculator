@@ -1197,3 +1197,110 @@
             color: var(--text-secondary);
             box-shadow: 0 1px 1px rgba(0,0,0,0.06);
         }
+
+        /* ==========================================================================
+           BRIGHTER SIDEBAR TEXT — overrides the muted greys above
+           ========================================================================== */
+        .brand-sub-text {
+            color: #CBD5E1;
+        }
+
+        .nav-category {
+            opacity: 1;
+            filter: brightness(1.2);
+        }
+
+        .nav-item {
+            color: #E2E8F0;
+            font-weight: 500;
+        }
+
+        .nav-item .nav-text {
+            color: #E2E8F0;
+            letter-spacing: 0.005em;
+        }
+
+        .nav-item .nav-icon-box {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .nav-item:hover .nav-text,
+        .nav-item.active .nav-text {
+            color: #FFFFFF;
+        }
+
+        .nav-item.active .nav-text {
+            font-weight: 700;
+        }
+
+        /* ==========================================================================
+           SIDEBAR FITS ANY SCREEN HEIGHT — every menu item visible without scrolling
+           Sizes shrink with the screen height (vh) between a minimum and the normal size.
+           ========================================================================== */
+        .app-shell {
+            height: 100vh;
+            height: 100dvh; /* phones: ignore the browser's address bar */
+        }
+
+        .viewport-wrapper {
+            height: calc(100vh - var(--topbar-height));
+            height: calc(100dvh - var(--topbar-height));
+        }
+
+        .nav-scroller {
+            padding: clamp(2px, 0.8vh, 8px) 0;
+            overflow-x: hidden;
+            scrollbar-width: none; /* scrollbar only matters on very short screens */
+        }
+
+        .nav-scroller::-webkit-scrollbar {
+            width: 0;
+        }
+
+        .nav-category {
+            padding: clamp(3px, 1vh, 10px) 14px clamp(2px, 0.4vh, 4px);
+            font-size: clamp(0.58rem, 1.3vh, 0.65rem);
+        }
+
+        .nav-item {
+            margin: clamp(1px, 0.3vh, 2px) 7px;
+            padding: clamp(2px, 0.95vh, 7px) 11px;
+            font-size: clamp(0.72rem, 2.1vh, 0.825rem);
+            line-height: 1.25;
+        }
+
+        .nav-item .nav-icon-box {
+            width: clamp(18px, 4.2vh, 26px);
+            height: clamp(18px, 4.2vh, 26px);
+            border-radius: clamp(5px, 0.9vh, 7px);
+            font-size: clamp(0.72rem, 1.8vh, 0.95rem);
+        }
+
+        /* Wide screens: a little more room for long tool names */
+        @media (min-width: 1600px) {
+            :root {
+                --sidebar-width: 275px;
+            }
+        }
+
+        /* Very short screens (landscape phones, small laptops zoomed in) */
+        @media (max-height: 520px) {
+            .sidebar-brand {
+                height: 44px;
+            }
+            .brand-logo-frame {
+                width: 30px;
+                height: 30px;
+            }
+            .brand-sub {
+                display: none;
+            }
+            .nav-item {
+                margin: 1px 7px;
+                padding: 2px 11px;
+            }
+            .nav-item .nav-icon-box {
+                width: 18px;
+                height: 18px;
+            }
+        }
