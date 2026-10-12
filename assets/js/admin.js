@@ -35,6 +35,21 @@
   let original = null;       // editor snapshot when loaded (for dirty check + diff)
   let draft = null;          // { id, updated_at, code, name, sort_order, active, lines: [...] }
   let uidSeq = 0;
+  // Sidebar item colours, same palette and hashing as the calculator shell (main.js)
+  const NAV_PALETTE = [
+    { color: '#6366F1', rgb: '99, 102, 241' }, { color: '#10B981', rgb: '16, 185, 129' },
+    { color: '#3B82F6', rgb: '59, 130, 246' }, { color: '#F59E0B', rgb: '245, 158, 11' },
+    { color: '#8B5CF6', rgb: '139, 92, 246' }, { color: '#F43F5E', rgb: '244, 63, 94' },
+    { color: '#14B8A6', rgb: '20, 184, 166' }, { color: '#F97316', rgb: '249, 115, 22' },
+    { color: '#06B6D4', rgb: '6, 182, 212' }, { color: '#EC4899', rgb: '236, 72, 153' },
+    { color: '#2563EB', rgb: '37, 99, 235' }, { color: '#059669', rgb: '5, 150, 105' },
+    { color: '#EF4444', rgb: '239, 68, 68' }, { color: '#7C3AED', rgb: '124, 58, 237' }
+  ];
+  function hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; }
+    return Math.abs(hash);
+  }
   let lastActivity = Date.now();
   let saving = false;
 
@@ -300,21 +315,18 @@
       const li = document.createElement('li');
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'scheme-item' + (s.id === selectedId ? ' active' : '') + (s.active ? '' : ' inactive');
+      btn.className = 'nav-item scheme-item' + (s.id === selectedId ? ' active' : '') + (s.active ? '' : ' inactive');
       btn.title = s.active ? s.name : s.name + ' (inactive: hidden from staff)';
-      const code = document.createElement('span');
-      code.className = 'code';
-      code.textContent = s.scheme_code;
-      const name = document.createElement('span');
-      name.className = 'name';
-      name.textContent = s.name;
-      btn.append(code, name);
-      if (!s.active) {
-        const b = document.createElement('span');
-        b.className = 'badge badge-warning';
-        b.textContent = 'Off';
-        btn.appendChild(b);
-      }
+      // Same item markup and colours as the calculator sidebar (main.js), so main.css hover/active effects apply
+      const theme = NAV_PALETTE[hashString(String(s.scheme_code)) % NAV_PALETTE.length];
+      btn.style.setProperty('--item-color', theme.color);
+      btn.style.setProperty('--item-rgb', theme.rgb);
+      const code = el('span', { className: 'nav-icon-box code', textContent: s.scheme_code });
+      code.style.background = 'rgba(' + theme.rgb + ', 0.15)';
+      code.style.color = theme.color;
+      btn.append(el('span', { className: 'nav-indicator' }), code, el('span', { className: 'nav-text name', textContent: s.name }));
+      if (!s.active) btn.appendChild(el('span', { className: 'badge badge-warning', textContent: 'Off' }));
+      btn.append(el('span', { className: 'nav-active-pill' }), el('span', { className: 'nav-arrow', textContent: '→' }));
       btn.addEventListener('click', () => { if (s.id !== selectedId && confirmDiscard()) openScheme(s.id); });
       li.appendChild(btn);
       list.appendChild(li);
