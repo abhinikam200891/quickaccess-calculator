@@ -8,53 +8,59 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://cuuupfgivmpybetgdrdn.supabase.co; base-uri 'none'; form-action 'none'; object-src 'none'">
     <title>Loan Charges Admin</title>
     <link rel="stylesheet" href="assets/css/banking-theme.css">
+    <link rel="stylesheet" href="assets/css/main.css">
     <script src="assets/js/banking-core.js"></script>
     <script src="assets/js/calculators/loan-charges-engine.js"></script>
     <script src="assets/js/admin.js" defer></script>
     <style>
-        body {
-            margin: 0;
-            background: var(--bg-app);
-            color: var(--text-primary);
-            font-family: var(--font-sans);
-            min-height: 100vh;
-        }
+        :root { --indigo: #6366F1; --indigo-rgb: 99, 102, 241; }
         [hidden] { display: none !important; }
+        :focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-primary { background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%); border-color: #4F46E5; }
+        .btn-primary:hover { background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%); box-shadow: 0 4px 14px rgba(var(--indigo-rgb), 0.35); }
 
-        /* ---------- Header ---------- */
-        .admin-header {
-            position: sticky;
-            top: 0;
-            z-index: 20;
+        /* ================= Login ================= */
+        .login-screen {
+            position: fixed;
+            inset: 0;
+            overflow-y: auto;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
+            padding: 24px 16px;
+            background:
+                radial-gradient(circle at 50% 0%, rgba(var(--indigo-rgb), 0.22) 0%, transparent 55%),
+                radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.12) 0%, transparent 45%),
+                linear-gradient(180deg, #070B14 0%, #0D1627 45%, #080D1A 100%);
+        }
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: var(--bg-surface);
+            box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+        }
+        .login-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             gap: 12px;
-            padding: 10px 20px;
-            background: var(--bank-navy);
-            color: var(--text-inverse);
-            box-shadow: var(--shadow-md);
+            padding: 28px 24px 22px;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(7, 11, 20, 1) 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
         }
-        .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-        .brand img { width: 30px; height: 30px; border-radius: 6px; background: #fff; object-fit: contain; }
-        .brand h1 { margin: 0; font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
-        .brand small { display: block; font-size: 0.7rem; color: #94A3B8; font-weight: 500; }
-        .header-user { display: flex; align-items: center; gap: 10px; font-size: 0.78rem; color: #CBD5E1; min-width: 0; }
-        .header-user .email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
-        .btn-ghost {
-            background: rgba(255, 255, 255, 0.08);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            padding: 6px 12px;
-            font-size: 0.76rem;
-        }
-        .btn-ghost:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
-
-        /* ---------- Login ---------- */
-        .login-wrap { display: flex; justify-content: center; padding: 64px 16px; }
-        .login-card { width: 100%; max-width: 380px; }
-        .login-card p { font-size: 0.82rem; color: var(--text-secondary); margin: 0 0 18px; line-height: 1.5; }
-        .login-card .btn { width: 100%; }
+        .login-brand .brand-logo-frame { width: 64px; height: 64px; }
+        .login-brand .brand-title { font-size: 1.25rem; justify-content: center; }
+        .login-brand .brand-sub { justify-content: center; }
+        .login-body { padding: 22px 26px 26px; }
+        .login-body h2 { margin: 0 0 4px; font-size: 1.05rem; font-weight: 800; color: var(--bank-navy); }
+        .login-body p { margin: 0 0 18px; font-size: 0.8rem; line-height: 1.55; color: var(--text-secondary); }
+        .login-body .btn-primary { width: 100%; padding: 10px; margin-top: 4px; }
+        .login-back { display: block; margin-top: 14px; text-align: center; font-size: 0.78rem; color: var(--text-muted); text-decoration: none; }
+        .login-back:hover { color: var(--indigo); }
         .form-error {
             display: none;
             margin: 0 0 14px;
@@ -67,147 +73,342 @@
         }
         .form-error.show { display: block; }
 
-        /* ---------- Layout ---------- */
-        .admin-main {
-            display: grid;
-            grid-template-columns: 280px minmax(0, 1fr);
-            gap: 16px;
-            max-width: 1440px;
-            margin: 0 auto;
-            padding: 16px 16px 96px;
-            box-sizing: border-box;
+        /* ================= Sidebar: scheme list ================= */
+        .sidebar-tools { position: relative; z-index: 2; padding: 10px 12px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+        .sidebar-tools .nav-category { padding: 0 2px 8px; --cat-color: #A5B4FC; }
+        .scheme-list-tools { display: flex; gap: 6px; }
+        .scheme-list-tools .form-control {
+            min-width: 0;
+            padding: 6px 11px;
+            font-size: 0.78rem;
+            color: #E2E8F0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
         }
-        @media (max-width: 900px) {
-            .admin-main { grid-template-columns: minmax(0, 1fr); }
-        }
-        .bank-card { margin-bottom: 16px; padding: 18px; }
-        .bank-card:hover { transform: none; }
-
-        /* ---------- Scheme list ---------- */
-        .scheme-list-card { padding: 14px; position: sticky; top: 66px; max-height: calc(100vh - 90px); display: flex; flex-direction: column; }
-        @media (max-width: 900px) { .scheme-list-card { position: static; max-height: 320px; } }
-        .scheme-list-tools { display: flex; gap: 8px; margin-bottom: 10px; }
-        .scheme-list-tools .form-control { padding: 6px 10px; font-size: 0.82rem; }
-        .scheme-list-tools .btn { white-space: nowrap; }
-        .scheme-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+        .scheme-list-tools .form-control::placeholder { color: #64748B; }
+        .scheme-list-tools .form-control:focus { border-color: #818CF8; background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 3px rgba(var(--indigo-rgb), 0.25); }
+        .scheme-list-tools .btn { white-space: nowrap; border-radius: 20px; padding: 6px 12px; }
+        .scheme-list { list-style: none; margin: 0; padding: 0; }
         .scheme-item {
+            position: relative;
             display: flex;
             align-items: center;
-            gap: 8px;
-            width: 100%;
-            padding: 8px 10px;
-            margin-bottom: 2px;
+            gap: 9px;
+            width: calc(100% - 14px);
+            margin: 2px 7px;
+            padding: 6px 10px;
             border: 1px solid transparent;
-            border-radius: var(--radius-sm);
+            border-radius: 8px;
             background: none;
             font: inherit;
             text-align: left;
             cursor: pointer;
-            color: var(--text-primary);
+            color: #94A3B8;
+            overflow: hidden;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .scheme-item:hover { background: var(--bg-subtle); }
-        .scheme-item.active { background: var(--bank-blue-subtle); border-color: #BFDBFE; }
-        .scheme-item .code { font-family: var(--font-mono); font-size: 0.74rem; font-weight: 700; color: var(--bank-blue); min-width: 38px; }
-        .scheme-item .name { flex: 1; font-size: 0.8rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .scheme-item.inactive .name { color: var(--text-muted); text-decoration: line-through; }
-        .list-empty { font-size: 0.8rem; color: var(--text-muted); padding: 12px 4px; }
+        .scheme-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 3.5px;
+            height: 16px;
+            border-radius: 0 4px 4px 0;
+            background: #818CF8;
+            box-shadow: 0 0 10px #818CF8;
+            transform: translateY(-50%) scaleY(0);
+            opacity: 0;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+        }
+        .scheme-item .code {
+            flex-shrink: 0;
+            min-width: 40px;
+            padding: 3px 5px;
+            border-radius: 7px;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #A5B4FC;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.2s ease;
+        }
+        .scheme-item .name { flex: 1; min-width: 0; font-size: 0.8rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .scheme-item:hover {
+            color: #fff;
+            padding-left: 13px;
+            background: linear-gradient(90deg, rgba(var(--indigo-rgb), 0.18) 0%, rgba(var(--indigo-rgb), 0.03) 100%);
+            border-color: rgba(var(--indigo-rgb), 0.35);
+        }
+        .scheme-item:hover::before, .scheme-item.active::before { transform: translateY(-50%) scaleY(1.2); opacity: 1; }
+        .scheme-item:hover .code { border-color: rgba(var(--indigo-rgb), 0.6); background: rgba(var(--indigo-rgb), 0.22); }
+        .scheme-item.active {
+            color: #fff;
+            background: linear-gradient(90deg, rgba(var(--indigo-rgb), 0.26) 0%, rgba(var(--indigo-rgb), 0.07) 100%);
+            border-color: rgba(var(--indigo-rgb), 0.45);
+            box-shadow: 0 3px 14px rgba(var(--indigo-rgb), 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        }
+        .scheme-item.active .name { font-weight: 600; }
+        .scheme-item.active .code { color: #fff; background: rgba(var(--indigo-rgb), 0.3); border-color: rgba(var(--indigo-rgb), 0.6); box-shadow: 0 0 14px rgba(var(--indigo-rgb), 0.45); }
+        .scheme-item.inactive .name { color: #64748B; text-decoration: line-through; }
+        .scheme-item .badge { font-size: 0.6rem; padding: 1px 6px; background: rgba(245, 158, 11, 0.15); color: #FBBF24; border-color: rgba(245, 158, 11, 0.4); }
+        .list-empty { font-size: 0.8rem; color: #64748B; padding: 14px 18px; }
+        .sidebar-footer { position: relative; z-index: 2; padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+        .sidebar-footer .nav-item { text-decoration: none; --item-color: #38BDF8; --item-rgb: 56, 189, 248; }
 
-        /* ---------- Editor ---------- */
-        .empty-state { text-align: center; padding: 64px 16px; color: var(--text-muted); font-size: 0.88rem; }
-        .editor-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
-        .editor-title h2 { margin: 0; font-size: 1.1rem; color: var(--bank-navy); }
-        .editor-title .actions { display: flex; gap: 8px; }
-        .scheme-grid { display: grid; grid-template-columns: 120px minmax(0, 1fr) 120px 150px; gap: 12px; align-items: start; }
+        /* ================= Topbar ================= */
+        .header-user { display: flex; align-items: center; gap: 8px; min-width: 0; }
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            min-width: 0;
+            padding: 3px 11px 3px 4px;
+            font-size: 0.775rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 20px;
+        }
+        .user-chip .avatar {
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            background: rgba(var(--indigo-rgb), 0.15);
+        }
+        .user-chip .email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+        #btn-logout { border-radius: 20px; }
+        @media (max-width: 640px) { .user-chip .email { display: none; } .user-chip { padding: 3px; } }
+
+        /* ================= Content ================= */
+        .admin-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px 24px; }
+        @media (max-width: 768px) { .admin-scroll { padding: 12px 12px 20px; } }
+        .admin-content { max-width: 1350px; margin: 0 auto; }
+        .bank-card { margin-bottom: 16px; padding: 18px 20px; }
+        .bank-card:hover { transform: none; }
+
+        .accent-card { position: relative; overflow: hidden; }
+        .accent-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3.5px; background: var(--strip, linear-gradient(90deg, #6366F1, #8B5CF6)); }
+        .accent-blue { --strip: linear-gradient(90deg, #3B82F6, #2563EB); }
+        .accent-emerald { --strip: linear-gradient(90deg, #10B981, #059669); }
+
+        .card-title { gap: 10px; justify-content: flex-start; }
+        .card-title .grow { flex: 1; }
+        .title-icon {
+            width: 30px;
+            height: 30px;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: var(--ti-bg, linear-gradient(135deg, #EEF2FF, #E0E7FF));
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+        .ti-blue { --ti-bg: linear-gradient(135deg, #DBEAFE, #BFDBFE); }
+        .ti-emerald { --ti-bg: linear-gradient(135deg, #D1FAE5, #A7F3D0); }
+
+        .empty-state { text-align: center; padding: 72px 24px; color: var(--text-muted); font-size: 0.88rem; }
+        .empty-state .empty-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            font-size: 1.6rem;
+            background: linear-gradient(145deg, #EEF2FF, #F5F3FF);
+            border: 1px solid #C7D2FE;
+            box-shadow: 0 6px 18px rgba(var(--indigo-rgb), 0.15);
+        }
+        .empty-state h3 { margin: 0 0 6px; font-size: 1rem; color: var(--bank-navy); }
+
+        .editor-top { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: stretch; }
+        .editor-top > .bank-card { display: flex; flex-direction: column; }
+        @media (max-width: 1180px) { .editor-top { grid-template-columns: minmax(0, 1fr); } }
+
+        .editor-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border-subtle); }
+        .editor-title .heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .editor-title .heading .title-icon { width: 40px; height: 40px; border-radius: 11px; font-size: 1.15rem; }
+        .editor-title .eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--indigo); }
+        .editor-title h2 { margin: 2px 0 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; color: var(--bank-navy); overflow-wrap: anywhere; }
+        .scheme-grid { display: grid; grid-template-columns: 120px minmax(0, 1fr) 110px 140px; gap: 14px; align-items: start; }
+        .scheme-grid .form-group { margin-bottom: 0; }
         @media (max-width: 760px) { .scheme-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
         .field-msg { display: block; min-height: 1em; margin-top: 4px; font-size: 0.72rem; color: var(--danger-text); }
         .form-control.invalid { border-color: var(--status-danger); background: var(--status-danger-bg); }
 
-        .switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.84rem; font-weight: 600; padding-top: 6px; }
-        .switch input { width: 18px; height: 18px; accent-color: var(--status-success); cursor: pointer; }
+        .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.84rem; font-weight: 600; padding-top: 7px; }
+        .switch input {
+            appearance: none;
+            -webkit-appearance: none;
+            position: relative;
+            flex-shrink: 0;
+            width: 38px;
+            height: 22px;
+            margin: 0;
+            border-radius: 999px;
+            background: var(--bg-muted);
+            border: 1px solid var(--border-default);
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+        .switch input::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .switch input:checked { background: var(--status-success); border-color: var(--status-success); }
+        .switch input:checked::after { transform: translateX(16px); }
 
-        /* Lines table */
-        .lines-scroll { overflow-x: auto; margin: 0 -18px; padding: 0 18px; }
-        .lines-table { width: 100%; min-width: 900px; border-collapse: collapse; font-size: 0.8rem; }
+        /* Recent changes */
+        .history-list { list-style: none; margin: 0; padding: 0; font-size: 0.8rem; flex: 1; }
+        .history-list li { position: relative; display: flex; flex-direction: column; gap: 1px; padding: 7px 0 7px 18px; border-bottom: 1px solid var(--border-subtle); }
+        .history-list li::before { content: ''; position: absolute; left: 3px; top: 13px; width: 7px; height: 7px; border-radius: 50%; background: #A5B4FC; box-shadow: 0 0 0 3px #EEF2FF; }
+        .history-list li:first-child::before { background: var(--indigo); }
+        .history-list li:last-child { border-bottom: 0; }
+        .history-list li.who { padding-left: 0; color: var(--text-muted); }
+        .history-list li.who::before { display: none; }
+        .history-list .who { color: var(--text-primary); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .history-list .when { color: var(--text-muted); font-size: 0.72rem; }
+
+        /* Charge lines table */
+        .lines-scroll { overflow-x: auto; margin: 0 -20px; padding: 0 20px; }
+        .lines-table { width: 100%; min-width: 900px; border-collapse: separate; border-spacing: 0; font-size: 0.8rem; }
         .lines-table th {
             text-align: left;
-            font-size: 0.68rem;
+            font-size: 0.66rem;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
             color: var(--text-secondary);
-            padding: 6px 6px;
-            border-bottom: 1px solid var(--border-default);
+            padding: 8px 6px;
+            background: var(--bg-subtle);
+            border-top: 1px solid var(--border-subtle);
+            border-bottom: 1px solid var(--border-subtle);
             white-space: nowrap;
         }
-        .lines-table td { padding: 6px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+        .lines-table th:first-child { border-left: 1px solid var(--border-subtle); border-radius: 8px 0 0 8px; padding-left: 10px; }
+        .lines-table th:last-child { border-right: 1px solid var(--border-subtle); border-radius: 0 8px 8px 0; }
+        .lines-table td { padding: 7px 6px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; transition: background 0.15s ease; }
+        .lines-table td:first-child { padding-left: 10px; }
+        .lines-table tbody tr:hover td { background: #FAFBFF; }
         .lines-table tr.row-error td { background: #FFF7F7; }
+        .lines-table tr.row-error td:first-child { box-shadow: inset 3px 0 0 var(--status-danger); }
         .lines-table .form-control { padding: 6px 8px; font-size: 0.8rem; }
         .lines-table .mono { font-family: var(--font-mono); }
-        .lines-table .col-order { width: 54px; white-space: nowrap; }
+        .lines-table .col-order { width: 64px; white-space: nowrap; }
         .lines-table .col-key { width: 150px; }
-        .lines-table .col-kind { width: 110px; }
+        .lines-table .col-kind { width: 120px; }
         .lines-table .col-total { width: 54px; text-align: center; }
-        .lines-table .col-preview { width: 110px; text-align: right; font-family: var(--font-mono); font-weight: 700; white-space: nowrap; padding-top: 12px; }
-        .lines-table .col-del { width: 34px; }
-        .lines-table td.col-total input { width: 16px; height: 16px; margin-top: 8px; accent-color: var(--bank-blue); }
+        .lines-table .col-preview { width: 110px; text-align: right; font-family: var(--font-mono); font-weight: 700; white-space: nowrap; padding-top: 13px; color: var(--bank-navy); }
+        .lines-table th.col-preview { font-family: inherit; font-weight: 800; padding-top: 8px; color: var(--text-secondary); }
+        .lines-table .col-del { width: 36px; }
+        .lines-table td.col-total input { width: 16px; height: 16px; margin-top: 8px; accent-color: var(--indigo); }
         .icon-btn {
             width: 24px;
             height: 24px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            margin-top: 4px;
             padding: 0;
             border: 1px solid var(--border-subtle);
             border-radius: 6px;
             background: var(--bg-surface);
             color: var(--text-secondary);
             cursor: pointer;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             line-height: 1;
+            transition: all 0.15s ease;
         }
-        .icon-btn:hover:not(:disabled) { background: var(--bg-subtle); color: var(--text-primary); }
+        .icon-btn:hover:not(:disabled) { background: #EEF2FF; color: var(--indigo); border-color: #C7D2FE; }
         .icon-btn:disabled { opacity: 0.35; cursor: default; }
-        .icon-btn.danger:hover { background: var(--status-danger-bg); color: var(--status-danger); border-color: var(--status-danger-border); }
-        .preview-err { color: var(--status-danger); }
-        .lines-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-        .total-line { font-size: 0.86rem; font-weight: 700; color: var(--bank-navy); }
-        .total-line span { font-family: var(--font-mono); }
+        .icon-btn.danger:hover:not(:disabled) { background: var(--status-danger-bg); color: var(--status-danger); border-color: var(--status-danger-border); }
+        .preview-err { color: var(--status-danger) !important; }
+        .lines-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+        .total-line {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            background: linear-gradient(145deg, #FFFFFF 0%, #FAFDFF 50%, #F0F7FF 100%);
+            border: 1px solid #BFDBFE;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748B;
+        }
+        .total-line span { font-family: var(--font-mono); font-size: 1.1rem; letter-spacing: 0; color: #1E40AF; }
+        .help {
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+            margin-top: 14px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: var(--bg-surface-alt);
+            border: 1px dashed var(--border-default);
+        }
+        .help code { font-family: var(--font-mono); background: #EEF2FF; padding: 1px 5px; border-radius: 4px; color: #4338CA; }
 
-        .help { font-size: 0.74rem; color: var(--text-muted); line-height: 1.6; margin-top: 12px; }
-        .help code { font-family: var(--font-mono); background: var(--bg-subtle); padding: 1px 4px; border-radius: 4px; color: var(--text-secondary); }
-
-        /* Test values + history */
-        .editor-bottom { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
-        @media (max-width: 1100px) { .editor-bottom { grid-template-columns: 1fr; } }
-        .test-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
-        .test-grid .form-group { margin: 0; }
-        .history-list { list-style: none; margin: 0; padding: 0; font-size: 0.8rem; }
-        .history-list li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border-subtle); }
-        .history-list li:last-child { border-bottom: 0; }
-        .history-list .who { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .history-list .when { color: var(--text-muted); white-space: nowrap; }
-
-        /* ---------- Save bar ---------- */
+        /* ================= Save bar ================= */
         .save-bar {
-            position: fixed;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 30;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: flex-end;
             gap: 10px;
             padding: 10px 20px;
-            background: var(--bg-surface);
-            border-top: 1px solid var(--border-default);
-            box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.06);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.05);
+            z-index: 10;
         }
-        .save-bar .state { margin-right: auto; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
-        .save-bar .state.dirty { color: var(--warn-text); }
-        .save-bar .state.error { color: var(--danger-text); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .save-bar .state {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: auto;
+            min-width: 0;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.775rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+        }
+        .save-bar .state::before { content: ''; flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--status-success); box-shadow: 0 0 6px var(--status-success); }
+        .save-bar .state.dirty { color: var(--warn-text); background: var(--status-warning-bg); border-color: var(--status-warning-border); }
+        .save-bar .state.dirty::before { background: var(--bank-gold-bright); box-shadow: 0 0 6px var(--bank-gold-bright); animation: pulseSubDot 1.6s infinite ease-in-out; }
+        .save-bar .state.error { color: var(--danger-text); background: var(--status-danger-bg); border-color: var(--status-danger-border); }
+        .save-bar .state.error::before { background: var(--status-danger); box-shadow: 0 0 6px var(--status-danger); }
+        @media (max-width: 580px) { .save-bar { padding: 10px 12px; } .save-bar .state { font-size: 0.72rem; } }
 
-        /* ---------- Modal ---------- */
+        /* ================= Modal & loader ================= */
         .modal-backdrop {
             position: fixed;
             inset: 0;
@@ -216,52 +417,35 @@
             align-items: center;
             justify-content: center;
             padding: 16px;
-            background: rgba(15, 23, 42, 0.45);
+            background: rgba(7, 11, 20, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
         }
-        .modal { width: 100%; max-width: 520px; max-height: 80vh; overflow-y: auto; margin: 0; }
-        .modal ul { margin: 0 0 16px; padding-left: 18px; font-size: 0.82rem; line-height: 1.7; color: var(--text-secondary); }
+        .modal { width: 100%; max-width: 520px; max-height: 80vh; overflow-y: auto; margin: 0; border-radius: 16px; box-shadow: var(--shadow-xl); animation: pop 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+        .modal ul { margin: 0 0 18px; padding-left: 18px; font-size: 0.82rem; line-height: 1.7; color: var(--text-secondary); }
         .modal .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
-
-        #loader {
-            position: fixed;
-            inset: 0;
-            z-index: 60;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(248, 250, 252, 0.6);
-        }
+        #loader { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; background: rgba(248, 250, 252, 0.5); backdrop-filter: blur(2px); }
         #loader.show { display: flex; }
-        .spinner { width: 34px; height: 34px; border: 3px solid var(--border-default); border-top-color: var(--bank-blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .spinner { width: 36px; height: 36px; border: 3px solid #E0E7FF; border-top-color: var(--indigo); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        @media (max-width: 560px) {
-            .admin-header { padding: 10px 16px; }
-            .brand small, .header-user .email { display: none; }
-            .save-bar { padding: 10px 16px; }
-            .save-bar .state { font-size: 0.72rem; }
-        }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
     </style>
 </head>
 <body>
-    <header class="admin-header">
-        <div class="brand">
-            <img src="assets/img/logo.png" alt="">
+
+<!-- Login -->
+<section id="login-view" class="login-screen" hidden>
+    <form class="login-card" id="login-form" novalidate>
+        <div class="login-brand">
+            <div class="brand-logo-frame"><img src="assets/img/logo.png" alt="Quick Access" class="brand-logo"></div>
             <div>
-                <h1>Loan Charges Admin</h1>
-                <small>Edit fee schemes used by the Loan Charges calculator</small>
+                <div class="brand-title"><span class="brand-title-main">QUICK</span><span class="brand-title-accent">ACCESS</span></div>
+                <div class="brand-sub"><span class="brand-sub-dot"></span><span class="brand-sub-text">Loan Admin</span></div>
             </div>
         </div>
-        <div class="header-user" id="header-user" hidden>
-            <span class="email" id="user-email"></span>
-            <button type="button" class="btn btn-ghost" id="btn-logout">Sign out</button>
-        </div>
-    </header>
-
-    <!-- Login -->
-    <section id="login-view" class="login-wrap" hidden>
-        <form class="bank-card login-card" id="login-form" novalidate>
-            <div class="card-title">Administrator sign in</div>
+        <div class="login-body">
+            <h2>Administrator sign in</h2>
             <p>Only accounts registered as loan administrators can change loan charges. Changes apply to every branch.</p>
             <div class="form-error" id="login-error" role="alert"></div>
             <div class="form-group">
@@ -273,118 +457,175 @@
                 <input class="form-control" id="login-password" type="password" autocomplete="current-password" required>
             </div>
             <button type="submit" class="btn btn-primary" id="btn-login">Sign in</button>
-        </form>
-    </section>
+            <a class="login-back" href="index.html">← Back to calculator</a>
+        </div>
+    </form>
+</section>
 
-    <!-- Editor -->
-    <main id="editor-view" class="admin-main" hidden>
-        <aside class="bank-card scheme-list-card">
+<!-- Editor -->
+<div class="app-shell" id="editor-view" hidden>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <a class="brand-info" href="index.html" title="Back to the calculator" style="text-decoration: none;">
+                <div class="brand-logo-frame"><img src="assets/img/logo.png" alt="Quick Access" class="brand-logo"></div>
+                <div class="brand-text-block">
+                    <div class="brand-title"><span class="brand-title-main">QUICK</span><span class="brand-title-accent">ACCESS</span></div>
+                    <div class="brand-sub"><span class="brand-sub-dot"></span><span class="brand-sub-text">Loan Admin</span></div>
+                </div>
+            </a>
+        </div>
+
+        <div class="sidebar-tools">
+            <div class="nav-category"><span class="cat-dot"></span>Fee schemes<span class="cat-line"></span></div>
             <div class="scheme-list-tools">
                 <input class="form-control" id="scheme-search" type="search" placeholder="Search code or name" aria-label="Search schemes">
                 <button type="button" class="btn btn-primary btn-sm" id="btn-new" title="New scheme">+ New</button>
             </div>
+        </div>
+
+        <div class="nav-scroller">
             <ul class="scheme-list" id="scheme-list"></ul>
-        </aside>
+        </div>
 
-        <div>
-            <div class="bank-card empty-state" id="empty-state">Select a scheme on the left to edit its charges, or create a new one.</div>
+        <div class="sidebar-footer">
+            <a class="nav-item" href="index.html">
+                <span class="nav-indicator"></span>
+                <span class="nav-icon-box" style="background: rgba(56, 189, 248, 0.15);">←</span>
+                <span class="nav-text">Back to Calculator</span>
+                <span class="nav-arrow">→</span>
+            </a>
+        </div>
+    </aside>
 
-            <div id="scheme-editor" hidden>
-                <div class="bank-card">
-                    <div class="editor-title">
-                        <h2 id="editor-heading"></h2>
-                        <div class="actions">
-                            <button type="button" class="btn btn-outline btn-sm" id="btn-duplicate" title="Start a new scheme from a copy of this one">Duplicate</button>
-                        </div>
-                    </div>
-                    <div class="scheme-grid">
-                        <div class="form-group">
-                            <label class="form-label" for="s-code">Scheme code</label>
-                            <input class="form-control mono" id="s-code" inputmode="numeric" maxlength="10">
-                            <span class="field-msg" data-for="code"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="s-name">Scheme name</label>
-                            <input class="form-control" id="s-name" maxlength="100">
-                            <span class="field-msg" data-for="name"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="s-order">Display order</label>
-                            <input class="form-control" id="s-order" type="number" step="1">
-                            <span class="field-msg" data-for="sort_order"></span>
-                        </div>
-                        <div class="form-group">
-                            <span class="form-label">Status</span>
-                            <label class="switch"><input type="checkbox" id="s-active"> <span id="s-active-label">Active</span></label>
-                        </div>
-                    </div>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <main class="workspace-area">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button type="button" class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Show schemes" title="Show schemes">☰</button>
+                <div class="current-tool-title">
+                    <span class="tool-icon-badge" style="background: rgba(99, 102, 241, 0.15); color: #6366F1;">🏦</span>
+                    <span>Loan Charges Admin</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="header-user" id="header-user" hidden>
+                    <span class="user-chip"><span class="avatar" aria-hidden="true">👤</span><span class="email" id="user-email"></span></span>
+                    <button type="button" class="btn btn-outline btn-sm" id="btn-logout">Sign out</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="admin-scroll">
+            <div class="admin-content">
+                <div class="bank-card empty-state" id="empty-state">
+                    <div class="empty-icon" aria-hidden="true">🏦</div>
+                    <h3>No scheme selected</h3>
+                    <p>Select a scheme from the list to edit its charges, or create a new one.</p>
                 </div>
 
-                <div class="bank-card">
-                    <div class="card-title">
-                        <span>Charge lines</span>
-                        <span class="badge badge-info" id="line-count"></span>
-                    </div>
-                    <div class="lines-scroll">
-                        <table class="lines-table">
-                            <thead>
-                                <tr>
-                                    <th class="col-order">Order</th>
-                                    <th class="col-key">Key</th>
-                                    <th>Label</th>
-                                    <th class="col-kind">Type</th>
-                                    <th>Formula / default / options</th>
-                                    <th class="col-total" title="Add this line to TOTAL DEDUCTIONS">Total</th>
-                                    <th class="col-preview">Preview</th>
-                                    <th class="col-del"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="lines-body"></tbody>
-                        </table>
-                    </div>
-                    <div class="lines-footer">
-                        <button type="button" class="btn btn-outline btn-sm" id="btn-add-line">+ Add line</button>
-                        <div class="total-line">TOTAL DEDUCTIONS (preview): <span id="preview-total">0.00</span></div>
-                    </div>
-                    <div class="help">
-                        <b>Type:</b> <i>Input</i> is typed by staff (optional default value), <i>Dropdown</i> lists choices as
-                        <code>1st:0, 2nd:1</code>, <i>Calculated</i> uses a formula such as <code>IF(history=0, amount*1.5%, amount*1%)</code>.
-                        Formulas refer to other lines by key. Functions: <code>SUM IF AND OR NOT MIN MAX ROUND ROUNDUP ROUNDDOWN MROUND INT ABS PMT</code>.
-                    </div>
-                </div>
+                <div id="scheme-editor" hidden>
+                    <div class="editor-top">
+                        <div class="bank-card accent-card">
+                            <div class="editor-title">
+                                <div class="heading">
+                                    <span class="title-icon" aria-hidden="true">🏦</span>
+                                    <div>
+                                        <div class="eyebrow">Loan scheme</div>
+                                        <h2 id="editor-heading"></h2>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline btn-sm" id="btn-duplicate" title="Start a new scheme from a copy of this one">⧉ Duplicate</button>
+                            </div>
+                            <div class="scheme-grid">
+                                <div class="form-group">
+                                    <label class="form-label" for="s-code">Scheme code</label>
+                                    <input class="form-control mono" id="s-code" inputmode="numeric" maxlength="10">
+                                    <span class="field-msg" data-for="code"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="s-name">Scheme name</label>
+                                    <input class="form-control" id="s-name" maxlength="100">
+                                    <span class="field-msg" data-for="name"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="s-order">Display order</label>
+                                    <input class="form-control" id="s-order" type="number" step="1">
+                                    <span class="field-msg" data-for="sort_order"></span>
+                                </div>
+                                <div class="form-group">
+                                    <span class="form-label">Status</span>
+                                    <label class="switch"><input type="checkbox" id="s-active"> <span id="s-active-label">Active</span></label>
+                                </div>
+                            </div>
+                        </div>
 
-                <div class="editor-bottom">
-                    <div class="bank-card">
-                        <div class="card-title">Test values <span class="badge badge-gold">not saved</span></div>
-                        <div class="test-grid" id="test-grid"></div>
-                        <div class="help">Try amounts here to check the Preview column before saving.</div>
+                        <div class="bank-card accent-card accent-emerald">
+                            <div class="card-title">
+                                <span class="title-icon ti-emerald" aria-hidden="true">🕘</span>
+                                <span class="grow">Recent changes</span>
+                            </div>
+                            <ul class="history-list" id="history-list"></ul>
+                        </div>
                     </div>
-                    <div class="bank-card">
-                        <div class="card-title">Recent changes</div>
-                        <ul class="history-list" id="history-list"></ul>
+
+                    <div class="bank-card accent-card accent-blue">
+                        <div class="card-title">
+                            <span class="title-icon ti-blue" aria-hidden="true">🧾</span>
+                            <span class="grow">Charge lines</span>
+                            <span class="badge badge-info" id="line-count"></span>
+                        </div>
+                        <div class="lines-scroll">
+                            <table class="lines-table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-order">Order</th>
+                                        <th class="col-key">Key</th>
+                                        <th>Label</th>
+                                        <th class="col-kind">Type</th>
+                                        <th>Formula / default / options</th>
+                                        <th class="col-total" title="Add this line to TOTAL DEDUCTIONS">Total</th>
+                                        <th class="col-preview" title="Result using each line's default value">Preview</th>
+                                        <th class="col-del"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lines-body"></tbody>
+                            </table>
+                        </div>
+                        <div class="lines-footer">
+                            <button type="button" class="btn btn-outline btn-sm" id="btn-add-line">+ Add line</button>
+                            <div class="total-line">Total deductions (preview) <span id="preview-total">0.00</span></div>
+                        </div>
+                        <div class="help">
+                            <b>Type:</b> <i>Input</i> is typed by staff (optional default value), <i>Dropdown</i> lists choices as
+                            <code>1st:0, 2nd:1</code>, <i>Calculated</i> uses a formula such as <code>IF(history=0, amount*1.5%, amount*1%)</code>.
+                            Formulas refer to other lines by key. Functions: <code>SUM IF AND OR NOT MIN MAX ROUND ROUNDUP ROUNDDOWN MROUND INT ABS PMT</code>.
+                            The Preview column uses each input's default value and the first dropdown choice.
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="save-bar" id="save-bar" hidden>
+            <span class="state" id="save-state">No changes</span>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-discard" disabled>Discard</button>
+            <button type="button" class="btn btn-success btn-sm" id="btn-save" disabled>Save changes</button>
         </div>
     </main>
+</div>
 
-    <div class="save-bar" id="save-bar" hidden>
-        <span class="state" id="save-state">No changes</span>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-discard" disabled>Discard</button>
-        <button type="button" class="btn btn-success btn-sm" id="btn-save" disabled>Save changes</button>
-    </div>
-
-    <div class="modal-backdrop" id="confirm-modal" hidden>
-        <div class="bank-card modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-            <div class="card-title" id="confirm-title">Save changes?</div>
-            <ul id="confirm-list"></ul>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-outline btn-sm" id="btn-confirm-cancel">Cancel</button>
-                <button type="button" class="btn btn-success btn-sm" id="btn-confirm-save">Save</button>
-            </div>
+<div class="modal-backdrop" id="confirm-modal" hidden>
+    <div class="bank-card modal accent-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="card-title" id="confirm-title">Save changes?</div>
+        <ul id="confirm-list"></ul>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-outline btn-sm" id="btn-confirm-cancel">Cancel</button>
+            <button type="button" class="btn btn-success btn-sm" id="btn-confirm-save">Save</button>
         </div>
     </div>
+</div>
 
-    <div id="loader"><div class="spinner"></div></div>
+<div id="loader"><div class="spinner"></div></div>
 </body>
 </html>

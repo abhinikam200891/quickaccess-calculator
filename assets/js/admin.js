@@ -34,7 +34,6 @@
   let selectedId = null;     // server id of the scheme being edited, or 'new'
   let original = null;       // editor snapshot when loaded (for dirty check + diff)
   let draft = null;          // { id, updated_at, code, name, sort_order, active, lines: [...] }
-  let testValues = {};       // uid -> test value (not saved)
   let uidSeq = 0;
   let lastActivity = Date.now();
   let saving = false;
@@ -384,7 +383,6 @@
     selectedId = id;
     draft = draftFromScheme(s);
     original = draftFromScheme(s);
-    testValues = {};
     showEditor();
     loadHistory(id);
   }
@@ -405,7 +403,6 @@
     };
     original = JSON.parse(JSON.stringify(draft));
     selectedId = 'new';
-    testValues = {};
     showEditor();
     loadHistory(null);
     $('s-code').focus();
@@ -496,7 +493,6 @@
       body.appendChild(tr);
     });
     $('line-count').textContent = draft.lines.length + (draft.lines.length === 1 ? ' line' : ' lines');
-    renderTestInputs();
     refresh();
   }
 
@@ -512,7 +508,6 @@
     const used = usedBy(line.key);
     if (used.length && !window.confirm('"' + (line.label || line.key) + '" is used in the formula of: ' + used.join(', ') + '.\nDelete it anyway?')) return;
     draft.lines.splice(i, 1);
-    delete testValues[line.uid];
     renderLines();
   }
 
@@ -662,9 +657,7 @@
     const inputs = {};
     draft.lines.forEach((l, i) => {
       if (l.kind === 'output') return;
-      const t = testValues[l.uid];
-      if (t !== undefined && t !== '') inputs[i] = Number(t);
-      else if (l.kind === 'select') inputs[i] = (compiled.fields[i].options[0] || { value: 0 }).value;
+      if (l.kind === 'select') inputs[i] = (compiled.fields[i].options[0] || { value: 0 }).value;
       else inputs[i] = Engine.initialValue(compiled.fields[i]) || 0;
     });
     const r = compiled.evaluate(inputs);
@@ -675,36 +668,6 @@
       c.title = err || '';
     });
     $('preview-total').textContent = fmt(r.total);
-  }
-
-  function renderTestInputs() {
-    const grid = $('test-grid');
-    grid.textContent = '';
-    const editable = draft.lines.filter(l => l.kind !== 'output');
-    if (!editable.length) {
-      grid.appendChild(el('div', { className: 'help', textContent: 'This scheme has no input lines.' }));
-      return;
-    }
-    editable.forEach(l => {
-      const id = 'test-' + l.uid;
-      let control;
-      if (l.kind === 'select') {
-        const p = parseOptions(l.options);
-        control = el('select', { className: 'form-control', id: id }, (p.options || []).map(o => el('option', { value: String(o.value), textContent: o.label })));
-        if (testValues[l.uid] !== undefined) control.value = String(testValues[l.uid]);
-        control.addEventListener('change', () => { testValues[l.uid] = control.value; refresh(); });
-      } else {
-        control = el('input', { className: 'form-control mono', id: id, inputMode: 'decimal', placeholder: l.default_value || '0', value: testValues[l.uid] || '' });
-        control.addEventListener('input', () => {
-          testValues[l.uid] = isNumber(control.value) ? control.value : '';
-          refresh();
-        });
-      }
-      grid.appendChild(el('div', { className: 'form-group' }, [
-        el('label', { className: 'form-label', htmlFor: id, textContent: l.label || l.key || '(unnamed)', title: l.label }),
-        control
-      ]));
-    });
   }
 
   function updateSaveBar() {
@@ -858,6 +821,16 @@
     $('btn-confirm-save').addEventListener('click', save);
     $('confirm-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
     bindSchemeInputs();
+
+    // Scheme list drawer on narrow screens
+    const setSidebar = open => {
+      $('sidebar').classList.toggle('sidebar-open', open);
+      $('sidebar-backdrop').classList.toggle('active', open);
+    };
+    $('sidebar-toggle').addEventListener('click', () => setSidebar(!$('sidebar').classList.contains('sidebar-open')));
+    $('sidebar-backdrop').addEventListener('click', () => setSidebar(false));
+    $('scheme-list').addEventListener('click', () => setSidebar(false));
+    $('btn-new').addEventListener('click', () => setSidebar(false));
 
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && !$('confirm-modal').hidden) closeModal();
