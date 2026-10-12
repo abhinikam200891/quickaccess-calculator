@@ -4,7 +4,9 @@
 -- Updates the 15 Loan Charges schemes: loan form fees, LPC, shares, stamp duty,
 -- valuation, search report, CERSAI, legal / advocate fees.
 --
--- HOW TO RUN: Supabase dashboard -> SQL Editor -> paste this whole file -> Run.
+-- HOW TO RUN: Supabase dashboard -> SQL Editor -> New query -> paste this whole
+--   file -> click in the editor, press Ctrl+A (nothing else highlighted) -> Run.
+--   The last line of the file is: -- END OF FILE
 --   * Each scheme is matched by its code (1602, 1603, ...). Its lines are replaced
 --     with the 2026-27 lines below; name, order and active flag stay as they are.
 --   * Every change is written to loan_scheme_audit with the old lines, so any
@@ -36,26 +38,16 @@ insert into charges_2026_27 (scheme_code, name, sort_order, fields) values
     ('1641', 'TRAVELLING LOAN', 140, '[{"key":"amount","label":"LOAN AMOUNT","kind":"input","formula":null,"default_value":null,"options":null,"in_total":false},{"key":"loan_form","label":"LOAN FORM","kind":"output","formula":"150","default_value":null,"options":null,"in_total":true},{"key":"gst_loan_form","label":"GST 18% ON LOAN FORM","kind":"output","formula":"loan_form*18/100","default_value":null,"options":null,"in_total":true},{"key":"lpc","label":"LPC 1%","kind":"output","formula":"amount*1/100","default_value":null,"options":null,"in_total":true},{"key":"gst_lpc","label":"GST 18% ON LPC","kind":"output","formula":"lpc*18/100","default_value":null,"options":null,"in_total":true},{"key":"shares","label":"SHARES 2.5%","kind":"output","formula":"amount*2.5/100","default_value":null,"options":null,"in_total":true},{"key":"share_entrance_fee","label":"SHARES ENTRANCE FEES","kind":"output","formula":"100","default_value":null,"options":null,"in_total":true},{"key":"co_loanee_shares","label":"CO LOANEE SHARES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"surety_shares","label":"SURETY SHARES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"adhesive","label":"ADHESIVE","kind":"output","formula":"500","default_value":null,"options":null,"in_total":true},{"key":"franking","label":"FRANKING CHARGES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"saving_account","label":"SAVING A/C","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true}]'::jsonb),
     ('1647', 'PROPERTY MORTGAGE (SLUM)', 150, '[{"key":"history","label":"LOAN HISTORY","kind":"select","formula":null,"default_value":null,"options":[{"label":"1st","value":0},{"label":"2nd","value":1}],"in_total":false},{"key":"mortgage_type","label":"MORTGAGE TYPE","kind":"select","formula":null,"default_value":null,"options":[{"label":"EQUITABLE","value":1}],"in_total":false},{"key":"amount","label":"LOAN AMOUNT","kind":"input","formula":null,"default_value":null,"options":null,"in_total":false},{"key":"loan_form","label":"LOAN FORM","kind":"output","formula":"250","default_value":null,"options":null,"in_total":true},{"key":"gst_loan_form","label":"GST 18% ON LOAN FORM","kind":"output","formula":"loan_form*18/100","default_value":null,"options":null,"in_total":true},{"key":"lpc","label":"LPC (1ST =1% MAX 50000 , 2ND =1% MAX 40000)","kind":"output","formula":"IF(history=0, MIN(50000, amount*1/100), IF(history=1, MIN(40000, amount*1/100), 0))","default_value":null,"options":null,"in_total":true},{"key":"gst_lpc","label":"GST 18% ON LPC","kind":"output","formula":"lpc*18/100","default_value":null,"options":null,"in_total":true},{"key":"shares","label":"SHARES 1%","kind":"output","formula":"amount *1/100","default_value":null,"options":null,"in_total":true},{"key":"share_entrance_fee","label":"SHARES ENTRANCE FEES","kind":"output","formula":"100","default_value":null,"options":null,"in_total":true},{"key":"co_loanee_shares","label":"CO LOANEE SHARES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"surety_shares","label":"SURETY SHARES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"loan_agreement","label":"LOAN AGREEMENT","kind":"output","formula":"500","default_value":null,"options":null,"in_total":true},{"key":"guarantee_deed","label":"DEED OF GUARANTEE","kind":"output","formula":"500","default_value":null,"options":null,"in_total":true},{"key":"declaration","label":"DECLARATION, UNDERTAKING & INDEMNITY (BORROWER)","kind":"output","formula":"500","default_value":null,"options":null,"in_total":true},{"key":"franking","label":"FRANKING CHARGES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"stamp_duty","label":"STAMP DUTY (REGISTER: 0.30% , EQUITABLE: UPTO 5 LAKH 0.10% AND ABOVE 5 LAKH 0.30%)","kind":"output","formula":"IF(AND(mortgage_type=1, amount<=500000), amount*0.1/100, amount*0.3/100)","default_value":null,"options":null,"in_total":true},{"key":"valuation","label":"VALUATION (0.125% MAX 3000 OF VALUATION)","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"search_report","label":"SEARCH REPORT (CITY 2500 / RURAL 1500) + 400 LEGAL OPINION","kind":"select","formula":null,"default_value":null,"options":[{"label":"City 2900","value":2900},{"label":"Rural 1900","value":1900}],"in_total":true},{"key":"legal_fee","label":"LEGAL FEES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"cersai","label":"CERSAI","kind":"output","formula":"100","default_value":null,"options":null,"in_total":true},{"key":"gst_cersai","label":"GST 18% ON CERSAI","kind":"output","formula":"cersai*18/100","default_value":null,"options":null,"in_total":true},{"key":"advocate_fee","label":"ADVOCATE FEES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"power_of_attorney","label":"POWER OF ATTORNEY (FRANKING + NOTARY)","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"saving_account","label":"SAVING A/C","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true}]'::jsonb);
 
--- Your loan_scheme_fields table links lines to a scheme by scheme_code. If the
--- trigger that stamps a scheme's updated_at still uses the old scheme_id column,
--- every change to a line fails (also saves from admin.html), so fix it first.
-do $fix$
+-- Lines are linked to their scheme by scheme_code. Make sure the trigger that
+-- stamps a scheme's updated_at uses scheme_code too (an older version used
+-- scheme_id, which makes every change to a line fail).
+create or replace function public.loan_touch_scheme() returns trigger
+language plpgsql set search_path = public as $$
 begin
-    if exists (select 1 from pg_proc
-                where proname = 'loan_touch_scheme' and pronamespace = 'public'::regnamespace
-                  and prosrc like '%scheme_id%') then
-        execute $f$
-            create or replace function public.loan_touch_scheme() returns trigger
-            language plpgsql set search_path = public as $body$
-            begin
-                update public.loan_schemes set updated_at = now()
-                 where scheme_code = coalesce(new.scheme_code, old.scheme_code);
-                return null;
-            end $body$
-        $f$;
-        raise notice 'loan_touch_scheme updated to use scheme_code';
-    end if;
-end $fix$;
+    update public.loan_schemes set updated_at = now()
+     where scheme_code = coalesce(new.scheme_code, old.scheme_code);
+    return null;
+end $$;
 
 do $$
 declare
@@ -111,3 +103,5 @@ commit;
 -- select s.scheme_code, s.name, f.label, f.kind, f.formula, f.default_value, f.options, f.in_total
 --   from public.loan_schemes s join public.loan_scheme_fields f on f.scheme_code = s.scheme_code
 --  order by s.sort_order, f.sort_order;
+
+-- END OF FILE
