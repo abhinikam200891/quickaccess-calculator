@@ -9,6 +9,7 @@
 --     with the 2026-27 lines below; name, order and active flag stay as they are.
 --   * Every change is written to loan_scheme_audit with the old lines, so any
 --     scheme can be restored from there.
+--   * Written for tables where loan_scheme_fields links to loan_schemes by scheme_code.
 --   * Runs in one transaction: if anything fails, nothing is changed.
 --   * Safe to run again (re-applies the same values).
 -- After running: open Loan Charges and press Refresh.
@@ -35,11 +36,33 @@ insert into charges_2026_27 (scheme_code, name, sort_order, fields) values
     ('1641', 'TRAVELLING LOAN', 140, '[{"key":"amount","label":"LOAN AMOUNT","kind":"input","formula":null,"default_value":null,"options":null,"in_total":false},{"key":"loan_form","label":"LOAN FORM","kind":"output","formula":"150","default_value":null,"options":null,"in_total":true},{"key":"gst_loan_form","label":"GST 18% ON LOAN FORM","kind":"output","formula":"loan_form*18/100","default_value":null,"options":null,"in_total":true},{"key":"lpc","label":"LPC 1%","kind":"output","formula":"amount*1/100","default_value":null,"options":null,"in_total":true},{"key":"gst_lpc","label":"GST 18% ON LPC","kind":"output","formula":"lpc*18/100","default_value":null,"options":null,"in_total":true},{"key":"shares","label":"SHARES 2.5%","kind":"output","formula":"amount*2.5/100","default_value":null,"options":null,"in_total":true},{"key":"share_entrance_fee","label":"SHARES ENTRANCE FEES","kind":"output","formula":"100","default_value":null,"options":null,"in_total":true},{"key":"co_loanee_shares","label":"CO LOANEE SHARES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"surety_shares","label":"SURETY SHARES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"adhesive","label":"ADHESIVE","kind":"output","formula":"500","default_value":null,"options":null,"in_total":true},{"key":"franking","label":"FRANKING CHARGES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"saving_account","label":"SAVING A/C","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true}]'::jsonb),
     ('1647', 'PROPERTY MORTGAGE (SLUM)', 150, '[{"key":"history","label":"LOAN HISTORY","kind":"select","formula":null,"default_value":null,"options":[{"label":"1st","value":0},{"label":"2nd","value":1}],"in_total":false},{"key":"mortgage_type","label":"MORTGAGE TYPE","kind":"select","formula":null,"default_value":null,"options":[{"label":"EQUITABLE","value":1}],"in_total":false},{"key":"amount","label":"LOAN AMOUNT","kind":"input","formula":null,"default_value":null,"options":null,"in_total":false},{"key":"loan_form","label":"LOAN FORM","kind":"output","formula":"250","default_value":null,"options":null,"in_total":true},{"key":"gst_loan_form","label":"GST 18% ON LOAN FORM","kind":"output","formula":"loan_form*18/100","default_value":null,"options":null,"in_total":true},{"key":"lpc","label":"LPC (1ST =1% MAX 50000 , 2ND =1% MAX 40000)","kind":"output","formula":"IF(history=0, MIN(50000, amount*1/100), IF(history=1, MIN(40000, amount*1/100), 0))","default_value":null,"options":null,"in_total":true},{"key":"gst_lpc","label":"GST 18% ON LPC","kind":"output","formula":"lpc*18/100","default_value":null,"options":null,"in_total":true},{"key":"shares","label":"SHARES 1%","kind":"output","formula":"amount *1/100","default_value":null,"options":null,"in_total":true},{"key":"share_entrance_fee","label":"SHARES ENTRANCE FEES","kind":"output","formula":"100","default_value":null,"options":null,"in_total":true},{"key":"co_loanee_shares","label":"CO LOANEE SHARES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"surety_shares","label":"SURETY SHARES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"loan_agreement","label":"LOAN AGREEMENT","kind":"output","formula":"500","default_value":null,"options":null,"in_total":true},{"key":"guarantee_deed","label":"DEED OF GUARANTEE","kind":"output","formula":"500","default_value":null,"options":null,"in_total":true},{"key":"declaration","label":"DECLARATION, UNDERTAKING & INDEMNITY (BORROWER)","kind":"output","formula":"500","default_value":null,"options":null,"in_total":true},{"key":"franking","label":"FRANKING CHARGES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"stamp_duty","label":"STAMP DUTY (REGISTER: 0.30% , EQUITABLE: UPTO 5 LAKH 0.10% AND ABOVE 5 LAKH 0.30%)","kind":"output","formula":"IF(AND(mortgage_type=1, amount<=500000), amount*0.1/100, amount*0.3/100)","default_value":null,"options":null,"in_total":true},{"key":"valuation","label":"VALUATION (0.125% MAX 3000 OF VALUATION)","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"search_report","label":"SEARCH REPORT (CITY 2500 / RURAL 1500) + 400 LEGAL OPINION","kind":"select","formula":null,"default_value":null,"options":[{"label":"City 2900","value":2900},{"label":"Rural 1900","value":1900}],"in_total":true},{"key":"legal_fee","label":"LEGAL FEES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"cersai","label":"CERSAI","kind":"output","formula":"100","default_value":null,"options":null,"in_total":true},{"key":"gst_cersai","label":"GST 18% ON CERSAI","kind":"output","formula":"cersai*18/100","default_value":null,"options":null,"in_total":true},{"key":"advocate_fee","label":"ADVOCATE FEES","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"power_of_attorney","label":"POWER OF ATTORNEY (FRANKING + NOTARY)","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true},{"key":"saving_account","label":"SAVING A/C","kind":"input","formula":null,"default_value":null,"options":null,"in_total":true}]'::jsonb);
 
+-- Your loan_scheme_fields table links lines to a scheme by scheme_code. If the
+-- trigger that stamps a scheme's updated_at still uses the old scheme_id column,
+-- every change to a line fails (also saves from admin.html), so fix it first.
+do $fix$
+begin
+    if exists (select 1 from pg_proc
+                where proname = 'loan_touch_scheme' and pronamespace = 'public'::regnamespace
+                  and prosrc like '%scheme_id%') then
+        execute $f$
+            create or replace function public.loan_touch_scheme() returns trigger
+            language plpgsql set search_path = public as $body$
+            begin
+                update public.loan_schemes set updated_at = now()
+                 where scheme_code = coalesce(new.scheme_code, old.scheme_code);
+                return null;
+            end $body$
+        $f$;
+        raise notice 'loan_touch_scheme updated to use scheme_code';
+    end if;
+end $fix$;
+
 do $$
 declare
     r        record;
     v_id     bigint;
     v_before jsonb;
+    v_after  jsonb;
 begin
     for r in select * from charges_2026_27 order by sort_order loop
         select id into v_id from public.loan_schemes where scheme_code = r.scheme_code for update;
@@ -50,21 +73,33 @@ begin
             returning id into v_id;
             v_before := null;
         else
-            v_before := public.loan_scheme_snapshot(v_id);
-            delete from public.loan_scheme_fields where scheme_id = v_id;
+            -- old lines, kept in the audit log so the scheme can be restored
+            select jsonb_build_object('scheme_code', s.scheme_code, 'name', s.name, 'sort_order', s.sort_order,
+                       'active', s.active,
+                       'fields', coalesce((select jsonb_agg(jsonb_build_object(
+                                     'key', f.key, 'label', f.label, 'kind', f.kind, 'formula', f.formula,
+                                     'default_value', f.default_value, 'options', f.options,
+                                     'in_total', f.in_total, 'sort_order', f.sort_order) order by f.sort_order, f.id)
+                                   from public.loan_scheme_fields f where f.scheme_code = s.scheme_code), '[]'::jsonb))
+              into v_before
+              from public.loan_schemes s where s.id = v_id;
+            delete from public.loan_scheme_fields where scheme_code = r.scheme_code;
         end if;
 
         insert into public.loan_scheme_fields
-            (scheme_id, key, label, kind, formula, default_value, options, in_total, sort_order)
-        select v_id, f->>'key', f->>'label', f->>'kind', f->>'formula',
+            (scheme_code, key, label, kind, formula, default_value, options, in_total, sort_order)
+        select r.scheme_code, f->>'key', f->>'label', f->>'kind', f->>'formula',
                (f->>'default_value')::numeric,
                case when jsonb_typeof(f->'options') = 'array' then f->'options' end,
                (f->>'in_total')::boolean, (n * 10)::integer
           from jsonb_array_elements(r.fields) with ordinality as t(f, n);
 
+        update public.loan_schemes set updated_at = now() where id = v_id;
+
+        v_after := jsonb_build_object('scheme_code', r.scheme_code, 'fields', r.fields);
         insert into public.loan_scheme_audit (scheme_id, scheme_code, action, changed_by_email, before, after)
         values (v_id, r.scheme_code, case when v_before is null then 'create' else 'update' end,
-                'SQL: Loan Dhoran 2026-27', v_before, public.loan_scheme_snapshot(v_id));
+                'SQL: Loan Dhoran 2026-27', v_before, v_after);
 
         raise notice '% % %', r.scheme_code, case when v_before is null then 'created' else 'updated' end, r.name;
     end loop;
@@ -74,5 +109,5 @@ commit;
 
 -- Check the result:
 -- select s.scheme_code, s.name, f.label, f.kind, f.formula, f.default_value, f.options, f.in_total
---   from public.loan_schemes s join public.loan_scheme_fields f on f.scheme_id = s.id
+--   from public.loan_schemes s join public.loan_scheme_fields f on f.scheme_code = s.scheme_code
 --  order by s.sort_order, f.sort_order;
