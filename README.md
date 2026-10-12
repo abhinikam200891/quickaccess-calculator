@@ -23,7 +23,7 @@ Loan Charges needs internet the first time, to load schemes from Supabase; after
 
 ## Loan Charges admin (`admin.html`)
 
-Administrators edit loan charges at `admin.html` (not listed in the sidebar): scheme code, name, order, active/inactive, and every charge line (key, label, type, formula / default / dropdown choices, included in total). Formulas are checked with the same engine the calculator uses, a Preview column shows the result for test values, and a confirmation lists every change before saving.
+Administrators edit loan charges at `admin.html` (not listed in the sidebar): scheme code, name, order, active/inactive, and every charge line (key, label, type, formula / default / dropdown choices, included in total). Formulas are checked with the same engine the calculator uses, a Preview column shows the result using each line's default value, and a confirmation lists every change before saving.
 
 Saving goes through the database function `admin_save_loan_scheme()`, which re-checks that the user is an admin, refuses to overwrite a scheme someone else saved in the meantime, saves the scheme and its lines in one transaction, and records who changed what in `loan_scheme_audit`. The public key still cannot write to the loan tables. The Loan Charges page checks the server every time it opens, so saved changes appear on the next open (or Refresh).
 
