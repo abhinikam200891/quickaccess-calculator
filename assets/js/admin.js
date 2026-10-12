@@ -170,6 +170,9 @@
     $('login-view').hidden = false;
     setLoginError(message || '');
     $('login-password').value = '';
+    $('login-password').type = 'password';
+    $('btn-reveal').querySelector('use').setAttribute('href', '#i-eye');
+    $('btn-reveal').setAttribute('aria-label', 'Show password');
     $((message || !$('login-email').value) ? 'login-email' : 'login-password').focus();
   }
 
@@ -242,6 +245,7 @@
     $('save-bar').hidden = false;
     $('header-user').hidden = false;
     $('user-email').textContent = session.email;
+    $('user-avatar').textContent = (session.email || 'A').charAt(0).toUpperCase();
     lastActivity = Date.now();
     return loadSchemes();
   }
@@ -303,12 +307,14 @@
     const q = $('scheme-search').value.trim().toLowerCase();
     const list = $('scheme-list');
     list.textContent = '';
+    renderStats();
     const shown = schemes.filter(s => !q || s.scheme_code.toLowerCase().includes(q) || s.name.toLowerCase().includes(q));
     if (!shown.length) {
       const li = document.createElement('li');
       li.className = 'list-empty';
       li.textContent = schemes.length ? 'No scheme matches.' : 'No schemes yet.';
       list.appendChild(li);
+      fitSchemeList();
       return;
     }
     shown.forEach(s => {
@@ -326,12 +332,62 @@
       code.style.color = theme.color;
       btn.append(el('span', { className: 'nav-indicator' }), code, el('span', { className: 'nav-text name', textContent: s.name }));
       if (!s.active) btn.appendChild(el('span', { className: 'badge badge-warning', textContent: 'Off' }));
-      btn.append(el('span', { className: 'nav-active-pill' }), el('span', { className: 'nav-arrow', textContent: '→' }));
+      btn.append(el('span', { className: 'nav-active-pill' }), el('span', { className: 'nav-arrow' }, [icon('chevron-right', 'ic-sm')]));
       btn.addEventListener('click', () => { if (s.id !== selectedId && confirmDiscard()) openScheme(s.id); });
       li.appendChild(btn);
       list.appendChild(li);
     });
+    fitSchemeList();
   }
+
+  function renderStats() {
+    const active = schemes.filter(s => s.active).length;
+    $('scheme-count').textContent = schemes.length;
+    $('stat-total').textContent = schemes.length;
+    $('stat-active').textContent = active;
+    $('stat-inactive').textContent = schemes.length - active;
+    $('stat-lines').textContent = schemes.reduce((n, s) => n + (s.loan_scheme_fields || []).length, 0);
+  }
+
+  // Size the scheme list so every scheme is visible without scrolling: rows shrink with the
+  // number of schemes, then the list switches to 2 columns (code + short name) and 3 columns
+  // (code only). Only a very large list on a very short screen still scrolls.
+  const ROW_MAX = 40, ROW_MIN = [16, 20, 20];   // smallest row height for 1, 2 and 3 columns
+  function fitSchemeList() {
+    const list = $('scheme-list');
+    const scroller = list.parentElement;
+    const n = list.querySelectorAll('.scheme-item').length;
+    list.classList.remove('cols-2', 'cols-3');
+    list.style.removeProperty('--scheme-cols');
+    list.style.removeProperty('--scheme-row');
+    if (!n) return;
+    const cs = getComputedStyle(scroller);
+    const avail = scroller.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 2;
+    if (avail <= 0) return;
+    let cols = 1;
+    while (cols < ROW_MIN.length && Math.ceil(n / cols) * ROW_MIN[cols - 1] > avail) cols++;
+    let row = Math.max(ROW_MIN[cols - 1], Math.min(ROW_MAX, Math.floor(avail / Math.ceil(n / cols))));
+    if (cols > 1) list.classList.add('cols-' + cols);
+    list.style.setProperty('--scheme-cols', String(cols));
+    list.style.setProperty('--scheme-row', row + 'px');
+    // Rounding and borders can still leave a pixel or two of overflow: tighten until it fits
+    while (row > ROW_MIN[cols - 1] && scroller.scrollHeight > scroller.clientHeight) {
+      list.style.setProperty('--scheme-row', --row + 'px');
+    }
+  }
+
+  // Compact the charge line rows (two steps) when they do not fit in the space left on screen;
+  // if even the most compact rows do not fit, the table scrolls under its fixed header.
+  function fitLines() {
+    const table = document.querySelector('.lines-table');
+    const box = document.querySelector('.lines-scroll');
+    if (!table || !box || $('scheme-editor').hidden) return;
+    table.classList.remove('dense', 'dense-2');
+    const overflows = () => box.scrollHeight > box.clientHeight + 1;
+    if (overflows()) table.classList.add('dense');
+    if (overflows()) table.classList.add('dense-2');
+  }
+
 
   function confirmDiscard() {
     return !isDirty() || window.confirm('You have unsaved changes. Discard them?');
@@ -341,6 +397,7 @@
     selectedId = null; draft = null; original = null;
     $('scheme-editor').hidden = true;
     $('empty-state').hidden = false;
+    $('crumb-current').textContent = 'Overview';
     renderSchemeList();
     updateSaveBar();
   }
@@ -445,6 +502,18 @@
     return n;
   }
 
+  /** Icon from the <symbol> set in admin.html */
+  function icon(name, cls) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'ic' + (cls ? ' ' + cls : ''));
+    svg.setAttribute('aria-hidden', 'true');
+    const use = document.createElementNS(NS, 'use');
+    use.setAttribute('href', '#i-' + name);
+    svg.appendChild(use);
+    return svg;
+  }
+
   function cellWithMsg(control, field) {
     return el('td', { className: control.dataset.col || '' }, [control, el('span', { className: 'field-msg', dataset: { field: field } })]);
   }
@@ -453,13 +522,15 @@
     const body = $('lines-body');
     body.textContent = '';
     draft.lines.forEach((line, i) => {
-      const tr = el('tr', { dataset: { uid: String(line.uid) } });
+      const tr = el('tr', { className: 'kind-' + line.kind, dataset: { uid: String(line.uid) } });
 
-      const up = el('button', { type: 'button', className: 'icon-btn', textContent: '▲', title: 'Move up', disabled: i === 0 });
-      const down = el('button', { type: 'button', className: 'icon-btn', textContent: '▼', title: 'Move down', disabled: i === draft.lines.length - 1 });
+      const up = el('button', { type: 'button', className: 'icon-btn', title: 'Move up', disabled: i === 0 }, [icon('up', 'ic-sm')]);
+      const down = el('button', { type: 'button', className: 'icon-btn', title: 'Move down', disabled: i === draft.lines.length - 1 }, [icon('down', 'ic-sm')]);
+      up.setAttribute('aria-label', 'Move line ' + (i + 1) + ' up');
+      down.setAttribute('aria-label', 'Move line ' + (i + 1) + ' down');
       up.addEventListener('click', () => moveLine(i, -1));
       down.addEventListener('click', () => moveLine(i, 1));
-      tr.appendChild(el('td', { className: 'col-order' }, [up, document.createTextNode(' '), down]));
+      tr.appendChild(el('td', { className: 'col-order' }, [el('span', { className: 'row-num', textContent: String(i + 1) }), up, down]));
 
       const key = el('input', { className: 'form-control mono', value: line.key, maxLength: 40, placeholder: 'e.g. stamp_duty', spellcheck: false });
       key.setAttribute('aria-label', 'Key of line ' + (i + 1));
@@ -498,14 +569,24 @@
 
       tr.appendChild(el('td', { className: 'col-preview', dataset: { preview: '1' } }));
 
-      const del = el('button', { type: 'button', className: 'icon-btn danger', textContent: '✕', title: 'Delete line' });
+      const del = el('button', { type: 'button', className: 'icon-btn danger', title: 'Delete line' }, [icon('trash', 'ic-sm')]);
+      del.setAttribute('aria-label', 'Delete line ' + (i + 1));
       del.addEventListener('click', () => deleteLine(i));
       tr.appendChild(el('td', { className: 'col-del' }, [del]));
 
       body.appendChild(tr);
     });
     $('line-count').textContent = draft.lines.length + (draft.lines.length === 1 ? ' line' : ' lines');
+    const legend = $('kind-legend');
+    legend.textContent = '';
+    KINDS.forEach(k => {
+      const n = draft.lines.filter(l => l.kind === k.value).length;
+      const item = el('span', {}, [el('b', { textContent: String(n) }), document.createTextNode(' ' + k.label)]);
+      item.style.setProperty('--k', 'var(--kind-' + k.value + ')');
+      legend.appendChild(item);
+    });
     refresh();
+    fitLines();
   }
 
   function moveLine(i, dir) {
@@ -639,7 +720,7 @@
       $({ code: 's-code', name: 's-name', sort_order: 's-order' }[f]).classList.toggle('invalid', !!v.scheme[f]);
     });
     $('s-active-label').textContent = draft.active ? 'Active (visible to staff)' : 'Inactive (hidden from staff)';
-    $('editor-heading').textContent = draft.id === null ? 'New scheme' : '(' + (original.code || '') + ') ' + (original.name || '');
+    renderEditorHeader();
 
     Array.from($('lines-body').rows).forEach(tr => {
       const errs = v.lines[tr.dataset.uid] || {};
@@ -653,6 +734,25 @@
 
     updatePreview(v.compiled);
     updateSaveBar();
+  }
+
+  function renderEditorHeader() {
+    const isNew = draft.id === null;
+    const title = isNew ? 'New scheme' : (original.name || '');
+    $('editor-heading').textContent = title;
+    $('crumb-current').textContent = title;
+    $('editor-code').hidden = isNew;
+    $('editor-code').textContent = isNew ? '' : original.code;
+    const status = $('editor-status');
+    status.textContent = isNew ? 'Draft' : draft.active ? 'Active' : 'Inactive';
+    status.className = 'chip chip-status ' + (isNew ? 'draft' : draft.active ? 'on' : 'off');
+    const meta = $('editor-meta');
+    meta.textContent = '';
+    const when = isNew ? 'Not saved yet'
+      : draft.updated_at ? 'Last updated ' + new Date(draft.updated_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : '';
+    if (when) meta.appendChild(el('span', { className: 'meta' }, [icon('calendar', 'ic-sm'), document.createTextNode(when)]));
+    meta.appendChild(el('span', { className: 'meta' }, [icon('info', 'ic-sm'), document.createTextNode(draft.active ? 'Visible to staff in Loan Charges' : 'Hidden from staff')]));
   }
 
   function fmt(n) {
@@ -825,6 +925,17 @@
     $('btn-logout').addEventListener('click', onLogoutClick);
     $('scheme-search').addEventListener('input', renderSchemeList);
     $('btn-new').addEventListener('click', () => newScheme(null));
+    $('btn-new-empty').addEventListener('click', () => newScheme(null));
+    $('btn-reveal').addEventListener('click', () => {
+      const pw = $('login-password');
+      const show = pw.type === 'password';
+      pw.type = show ? 'text' : 'password';
+      const btn = $('btn-reveal');
+      btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      btn.title = btn.getAttribute('aria-label');
+      btn.querySelector('use').setAttribute('href', show ? '#i-eye-off' : '#i-eye');
+      pw.focus();
+    });
     $('btn-duplicate').addEventListener('click', () => { const copy = draft; newScheme(copy); });
     $('btn-add-line').addEventListener('click', addLine);
     $('btn-save').addEventListener('click', askSave);
@@ -843,6 +954,10 @@
     $('sidebar-backdrop').addEventListener('click', () => setSidebar(false));
     $('scheme-list').addEventListener('click', () => setSidebar(false));
     $('btn-new').addEventListener('click', () => setSidebar(false));
+    $('btn-open-list').addEventListener('click', () => {
+      if (getComputedStyle($('sidebar-toggle')).display !== 'none') setSidebar(true);
+      $('scheme-search').focus();
+    });
 
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && !$('confirm-modal').hidden) closeModal();
@@ -852,6 +967,13 @@
     setInterval(() => {
       if (session && Date.now() - lastActivity > IDLE_LIMIT_MS) logout('Signed out after 30 minutes of inactivity.');
     }, 30000);
+    // Re-fit the scheme list and charge lines whenever their space changes (window resize, fonts, zoom)
+    if (window.ResizeObserver) {
+      new ResizeObserver(fitSchemeList).observe($('scheme-list').parentElement);
+      new ResizeObserver(fitLines).observe(document.querySelector('.lines-scroll'));
+    } else {
+      window.addEventListener('resize', () => { fitSchemeList(); fitLines(); });
+    }
     window.addEventListener('beforeunload', e => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
 
     // Resume a session from this tab, if any

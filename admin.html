@@ -6,204 +6,348 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="referrer" content="no-referrer">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://cuuupfgivmpybetgdrdn.supabase.co; base-uri 'none'; form-action 'none'; object-src 'none'">
-    <title>Loan Charges Admin</title>
+    <title>Loan Charges Admin · Quick Access</title>
     <link rel="stylesheet" href="assets/css/banking-theme.css">
     <link rel="stylesheet" href="assets/css/main.css">
     <script src="assets/js/banking-core.js"></script>
     <script src="assets/js/calculators/loan-charges-engine.js"></script>
     <script src="assets/js/admin.js" defer></script>
     <style>
-        :root { --indigo: #6366F1; --indigo-rgb: 99, 102, 241; }
+        /* ==========================================================================
+           TOKENS
+           ========================================================================== */
+        :root {
+            --indigo: #4F46E5;
+            --indigo-hover: #4338CA;
+            --indigo-rgb: 79, 70, 229;
+            --indigo-soft: #EEF2FF;
+            --indigo-line: #C7D2FE;
+            --ink: #0F172A;
+            --ink-2: #334155;
+            --line: #E2E8F0;
+            --line-strong: #CBD5E1;
+            --canvas: #F4F6FA;
+            --card-radius: 12px;
+            --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.03);
+            --kind-input: #0EA5E9;
+            --kind-select: #8B5CF6;
+            --kind-output: #10B981;
+        }
         [hidden] { display: none !important; }
         :focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-        .btn-primary { background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%); border-color: #4F46E5; }
-        .btn-primary:hover { background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%); box-shadow: 0 4px 14px rgba(var(--indigo-rgb), 0.35); }
 
-        /* ================= Login ================= */
+        .ic { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; }
+        .ic-sm { width: 14px; height: 14px; }
+        .ic-lg { width: 20px; height: 20px; }
+
+        /* Buttons: flat, consistent heights */
+        .btn { gap: 6px; white-space: nowrap; font-weight: 600; letter-spacing: 0; box-shadow: none; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 8px; }
+        .btn:active { transform: none; }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+        .btn-primary { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+        .btn-primary:hover:not(:disabled) { background: var(--indigo-hover); border-color: var(--indigo-hover); box-shadow: 0 2px 8px rgba(var(--indigo-rgb), 0.3); transform: none; }
+        .btn-success { background: #059669; border-color: #059669; color: #fff; }
+        .btn-success:hover:not(:disabled) { background: #047857; border-color: #047857; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3); transform: none; }
+        .btn-outline { background: #fff; color: var(--ink-2); border-color: var(--line-strong); }
+        .btn-outline:hover:not(:disabled) { background: #F8FAFC; color: var(--ink); border-color: #94A3B8; transform: none; }
+        .btn-ghost { background: transparent; color: var(--ink-2); border-color: transparent; }
+        .btn-ghost:hover:not(:disabled) { background: #F1F5F9; color: var(--ink); }
+
+        .form-control { background-color: #fff; border-color: var(--line-strong); }
+        .form-control:hover:not(:focus):not(.invalid) { border-color: #94A3B8; }
+        .form-control:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(var(--indigo-rgb), 0.15); }
+        .form-control.invalid { border-color: #EF4444; background: #FEF2F2; }
+        .form-control.invalid:focus { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
+        .form-label { font-size: 0.7rem; letter-spacing: 0.06em; color: #64748B; }
+        .mono { font-family: var(--font-mono); }
+        .field-msg { display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 0.72rem; font-weight: 500; color: #DC2626; }
+        .field-msg:empty { display: none; }
+
+        /* ==========================================================================
+           SIGN IN
+           ========================================================================== */
         .login-screen {
             position: fixed;
             inset: 0;
             overflow-y: auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px 16px;
-            background:
-                radial-gradient(circle at 50% 0%, rgba(var(--indigo-rgb), 0.22) 0%, transparent 55%),
-                radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.12) 0%, transparent 45%),
-                linear-gradient(180deg, #070B14 0%, #0D1627 45%, #080D1A 100%);
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+            background: #fff;
         }
-        .login-card {
-            width: 100%;
-            max-width: 400px;
-            border-radius: 16px;
+        .login-aside {
+            position: relative;
             overflow: hidden;
-            background: var(--bg-surface);
-            box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
-        }
-        .login-brand {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            padding: 28px 24px 22px;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(7, 11, 20, 1) 100%);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            text-align: center;
-        }
-        .login-brand .brand-logo-frame { width: 64px; height: 64px; }
-        .login-brand .brand-title { font-size: 1.25rem; justify-content: center; }
-        .login-brand .brand-sub { justify-content: center; }
-        .login-body { padding: 22px 26px 26px; }
-        .login-body h2 { margin: 0 0 4px; font-size: 1.05rem; font-weight: 800; color: var(--bank-navy); }
-        .login-body p { margin: 0 0 18px; font-size: 0.8rem; line-height: 1.55; color: var(--text-secondary); }
-        .login-body .btn-primary { width: 100%; padding: 10px; margin-top: 4px; }
-        .login-back { display: block; margin-top: 14px; text-align: center; font-size: 0.78rem; color: var(--text-muted); text-decoration: none; }
-        .login-back:hover { color: var(--indigo); }
-        .form-error {
-            display: none;
-            margin: 0 0 14px;
-            padding: 8px 10px;
-            font-size: 0.8rem;
-            color: var(--danger-text);
-            background: var(--status-danger-bg);
-            border: 1px solid var(--status-danger-border);
-            border-radius: var(--radius-sm);
-        }
-        .form-error.show { display: block; }
-
-        /* ================= Sidebar: scheme list ================= */
-        .sidebar-tools { position: relative; z-index: 2; padding: 10px 12px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
-        .sidebar-tools .nav-category { padding: 0 2px 8px; --cat-color: #A5B4FC; }
-        .scheme-list-tools { display: flex; gap: 6px; }
-        .scheme-list-tools .form-control {
-            min-width: 0;
-            padding: 6px 11px;
-            font-size: 0.78rem;
+            justify-content: space-between;
+            gap: 32px;
+            padding: 40px 48px;
             color: #E2E8F0;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 20px;
+            background:
+                radial-gradient(circle at 15% 0%, rgba(99, 102, 241, 0.28) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(14, 165, 233, 0.16) 0%, transparent 45%),
+                linear-gradient(180deg, #070B14 0%, #0D1627 55%, #080D1A 100%);
         }
-        .scheme-list-tools .form-control::placeholder { color: #64748B; }
-        .scheme-list-tools .form-control:focus { border-color: #818CF8; background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 3px rgba(var(--indigo-rgb), 0.25); }
-        .scheme-list-tools .btn { white-space: nowrap; border-radius: 20px; padding: 6px 12px; }
-        .scheme-list { list-style: none; margin: 0; padding: 0; }
-        /* Scheme items reuse .nav-item from main.css; only the code box and "inactive" look are added here */
-        .scheme-item .nav-icon-box.code { width: auto; min-width: 26px; padding: 0 5px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; }
-        .scheme-item .nav-text { min-width: 0; }
-        .scheme-item.inactive .nav-text { text-decoration: line-through; opacity: 0.6; }
-        .scheme-item .badge { flex-shrink: 0; margin-left: 6px; font-size: 0.6rem; padding: 1px 6px; background: rgba(245, 158, 11, 0.15); color: #FBBF24; border-color: rgba(245, 158, 11, 0.4); }
-        .scheme-item .nav-active-pill { margin-left: 6px; }
-        .list-empty { font-size: 0.8rem; color: #64748B; padding: 14px 18px; }
-        .sidebar-footer { position: relative; z-index: 2; padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
-        .sidebar-footer .nav-item { text-decoration: none; --item-color: #38BDF8; --item-rgb: 56, 189, 248; }
+        .login-aside::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(ellipse at 30% 40%, #000 0%, transparent 75%);
+            -webkit-mask-image: radial-gradient(ellipse at 30% 40%, #000 0%, transparent 75%);
+            pointer-events: none;
+        }
+        .login-aside > * { position: relative; z-index: 1; }
+        .login-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .login-logo .brand-logo-frame { width: 44px; height: 44px; }
+        .login-pitch h1 { margin: 0 0 12px; font-size: clamp(1.6rem, 2.6vw, 2.2rem); line-height: 1.15; font-weight: 800; letter-spacing: -0.025em; color: #fff; }
+        .login-pitch p { margin: 0; max-width: 440px; font-size: 0.95rem; line-height: 1.65; color: #94A3B8; }
+        .login-points { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 14px; max-width: 440px; }
+        .login-points li { display: flex; gap: 12px; align-items: flex-start; font-size: 0.85rem; line-height: 1.5; color: #CBD5E1; }
+        .login-points .pt-icon { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px; color: #A5B4FC; background: rgba(99, 102, 241, 0.14); border: 1px solid rgba(165, 180, 252, 0.2); }
+        .login-points b { display: block; color: #F8FAFC; font-weight: 600; }
+        .login-foot { font-size: 0.75rem; color: #64748B; }
 
-        /* ================= Topbar ================= */
-        .header-user { display: flex; align-items: center; gap: 8px; min-width: 0; }
-        .user-chip {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            min-width: 0;
-            padding: 3px 11px 3px 4px;
-            font-size: 0.775rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            background: #F8FAFC;
-            border: 1px solid #E2E8F0;
-            border-radius: 20px;
-        }
-        .user-chip .avatar {
-            width: 22px;
-            height: 22px;
-            flex-shrink: 0;
-            display: flex;
+        .login-main { display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: #fff; }
+        .login-card { width: 100%; max-width: 380px; }
+        .login-card .mobile-brand { display: none; }
+        .login-card h2 { margin: 0 0 6px; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
+        .login-card .lead { margin: 0 0 28px; font-size: 0.875rem; line-height: 1.6; color: #64748B; }
+        .login-card .form-group { margin-bottom: 18px; }
+        .login-card .form-label { text-transform: none; letter-spacing: 0; font-size: 0.8rem; font-weight: 600; color: var(--ink-2); }
+        .login-card .form-control { padding: 10px 12px; font-size: 0.9rem; }
+        .input-wrap { position: relative; }
+        .input-wrap .form-control { padding-right: 42px; }
+        .input-wrap .reveal {
+            position: absolute;
+            top: 50%;
+            right: 6px;
+            transform: translateY(-50%);
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 50%;
-            font-size: 0.7rem;
-            background: rgba(var(--indigo-rgb), 0.15);
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border: 0;
+            border-radius: 6px;
+            background: transparent;
+            color: #64748B;
+            cursor: pointer;
         }
-        .user-chip .email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
-        #btn-logout { border-radius: 20px; }
-        @media (max-width: 640px) { .user-chip .email { display: none; } .user-chip { padding: 3px; } }
+        .input-wrap .reveal:hover { background: #F1F5F9; color: var(--ink); }
+        .login-card .btn-primary { width: 100%; padding: 11px; margin-top: 6px; font-size: 0.9rem; }
+        .login-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 0.78rem; color: #64748B; }
+        .login-meta a { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); font-weight: 600; text-decoration: none; }
+        .login-meta a:hover { color: var(--indigo); }
+        .login-meta .secure { display: inline-flex; align-items: center; gap: 6px; }
+        .form-error {
+            display: none;
+            align-items: flex-start;
+            gap: 8px;
+            margin: 0 0 18px;
+            padding: 10px 12px;
+            font-size: 0.82rem;
+            line-height: 1.45;
+            color: #991B1B;
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            border-radius: 8px;
+        }
+        .form-error::before { content: '!'; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; flex-shrink: 0; border-radius: 50%; background: #DC2626; color: #fff; font-size: 0.7rem; font-weight: 800; }
+        .form-error.show { display: flex; }
 
-        /* ================= Content ================= */
-        .admin-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px 24px; }
-        @media (max-width: 768px) { .admin-scroll { padding: 12px 12px 20px; } }
-        .admin-content { max-width: 1350px; margin: 0 auto; }
-        .bank-card { margin-bottom: 16px; padding: 18px 20px; }
-        .bank-card:hover { transform: none; }
+        @media (max-width: 900px) {
+            .login-screen { grid-template-columns: minmax(0, 1fr); background: var(--canvas); }
+            .login-aside { display: none; }
+            .login-main { background: transparent; padding: 32px 16px; }
+            .login-card { background: #fff; padding: 28px 22px; border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow-lg); }
+            .login-card .mobile-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+            .login-card .mobile-brand .brand-logo-frame { width: 38px; height: 38px; }
+            .login-card .mobile-brand .brand-title-main { color: var(--ink); }
+        }
 
-        .accent-card { position: relative; overflow: hidden; }
-        .accent-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3.5px; background: var(--strip, linear-gradient(90deg, #6366F1, #8B5CF6)); }
-        .accent-blue { --strip: linear-gradient(90deg, #3B82F6, #2563EB); }
-        .accent-emerald { --strip: linear-gradient(90deg, #10B981, #059669); }
+        /* ==========================================================================
+           SIDEBAR: scheme list (items reuse .nav-item from main.css)
+           ========================================================================== */
+        .sidebar-tools { position: relative; z-index: 2; padding: 12px 12px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+        .sidebar-tools .tools-head { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 10px; }
+        .sidebar-tools .tools-head h3 { margin: 0; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94A3B8; }
+        .sidebar-tools .tools-count { min-width: 22px; padding: 1px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 700; text-align: center; color: #C7D2FE; background: rgba(99, 102, 241, 0.18); }
+        .scheme-list-tools { display: flex; gap: 6px; }
+        .search-box { position: relative; flex: 1; min-width: 0; }
+        .search-box .ic { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #64748B; pointer-events: none; }
+        .scheme-list-tools .form-control {
+            height: 32px;
+            padding: 0 10px 0 30px;
+            font-size: 0.78rem;
+            color: #F8FAFC;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        .scheme-list-tools .form-control::placeholder { color: #94A3B8; }
+        .scheme-list-tools .form-control:hover:not(:focus) { border-color: rgba(255, 255, 255, 0.2); }
+        .scheme-list-tools .form-control:focus { border-color: #818CF8; background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25); }
+        .scheme-list-tools .btn { height: 32px; padding: 0 11px; white-space: nowrap; border-radius: 8px; }
+        .sidebar .nav-scroller { padding: 4px 0; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.15) transparent; }
+        .sidebar .nav-scroller::-webkit-scrollbar { width: 4px; }
+        .sidebar .nav-scroller::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
 
-        .card-title { gap: 10px; justify-content: flex-start; }
-        .card-title .grow { flex: 1; }
-        .title-icon {
+        /* fitSchemeList (admin.js) sets --scheme-row (row height) and --scheme-cols (1-3 columns)
+           so every scheme stays visible without scrolling */
+        .scheme-list { list-style: none; margin: 0; display: grid; grid-template-columns: repeat(var(--scheme-cols, 1), minmax(0, 1fr)); grid-auto-rows: var(--scheme-row, auto); padding: 0 4px; }
+        .scheme-list > li { min-width: 0; }
+        .scheme-list .scheme-item {
+            width: calc(100% - 4px);
+            height: calc(var(--scheme-row, 40px) - 2px);
+            margin: 1px 2px;
+            padding: 0 8px;
+            font-size: clamp(0.66rem, calc(var(--scheme-row, 40px) * 0.34), 0.825rem);
+        }
+        .scheme-item .nav-text { min-width: 0; color: #E2E8F0; }
+        .scheme-list .scheme-item .nav-icon-box.code {
+            height: clamp(16px, calc(var(--scheme-row, 40px) - 10px), 26px);
+            width: auto;
+            min-width: clamp(16px, calc(var(--scheme-row, 40px) - 10px), 26px);
+            margin-right: 8px;
+            padding: 0 5px;
+            border-radius: 5px;
+            font-family: var(--font-mono);
+            font-size: clamp(0.6rem, calc(var(--scheme-row, 40px) * 0.28), 0.68rem);
+            font-weight: 700;
+            filter: brightness(1.25);
+        }
+        .scheme-item.inactive .nav-text { color: #94A3B8; text-decoration: line-through; }
+        .scheme-item .badge { flex-shrink: 0; margin-left: 6px; padding: 1px 6px; font-size: 0.58rem; color: #FBBF24; background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.35); }
+        .scheme-item .nav-active-pill { margin-left: 6px; }
+        .scheme-item .nav-arrow { display: inline-flex; }
+        .scheme-list.cols-2 .scheme-item, .scheme-list.cols-3 .scheme-item { padding: 0 5px; }
+        .scheme-list.cols-2 .scheme-item .nav-icon-box { margin-right: 5px; padding: 0 3px; }
+        .scheme-list.cols-2 .nav-arrow, .scheme-list.cols-3 .nav-arrow,
+        .scheme-list.cols-2 .nav-active-pill, .scheme-list.cols-3 .nav-active-pill { display: none; }
+        .scheme-list.cols-2 .scheme-item .badge { margin-left: 3px; padding: 0 4px; font-size: 0.55rem; }
+        /* Three columns: code only (full name in the tooltip) */
+        .scheme-list.cols-3 .scheme-item { justify-content: center; }
+        .scheme-list.cols-3 .scheme-item .nav-text, .scheme-list.cols-3 .scheme-item .badge { display: none; }
+        .scheme-list.cols-3 .scheme-item .nav-icon-box { margin-right: 0; width: 100%; }
+        .scheme-list.cols-3 .scheme-item.inactive .nav-icon-box { text-decoration: line-through; opacity: 0.6; }
+        .list-empty { padding: 16px 14px; font-size: 0.8rem; color: #94A3B8; text-align: center; }
+
+        .sidebar-footer { position: relative; z-index: 2; padding: 6px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+        .sidebar-footer .nav-item { padding-top: 5px; padding-bottom: 5px; text-decoration: none; --item-color: #38BDF8; --item-rgb: 56, 189, 248; }
+        .sidebar-footer .nav-icon-box { color: #7DD3FC; background: rgba(56, 189, 248, 0.14); }
+
+        /* ==========================================================================
+           TOPBAR
+           ========================================================================== */
+        .topbar { background: rgba(255, 255, 255, 0.95); box-shadow: none; border-bottom: 1px solid var(--line); }
+        .sidebar-toggle-btn { background: #fff; border-color: var(--line-strong); color: var(--ink-2); }
+        .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 0.84rem; color: #64748B; }
+        .crumbs .crumb-root { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+        .crumbs .crumb-root .crumb-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; color: var(--indigo); background: var(--indigo-soft); border: 1px solid var(--indigo-line); }
+        .crumbs .sep { color: #CBD5E1; flex-shrink: 0; }
+        .crumbs .crumb-current { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--ink-2); }
+        .header-user { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .user-chip { display: flex; align-items: center; gap: 9px; min-width: 0; padding-right: 12px; border-right: 1px solid var(--line); }
+        .user-chip .avatar {
             width: 30px;
             height: 30px;
             flex-shrink: 0;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            background: var(--ti-bg, linear-gradient(135deg, #EEF2FF, #E0E7FF));
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #6366F1, #4338CA);
         }
-        .ti-blue { --ti-bg: linear-gradient(135deg, #DBEAFE, #BFDBFE); }
-        .ti-emerald { --ti-bg: linear-gradient(135deg, #D1FAE5, #A7F3D0); }
-
-        .empty-state { text-align: center; padding: 72px 24px; color: var(--text-muted); font-size: 0.88rem; }
-        .empty-state .empty-icon {
-            width: 56px;
-            height: 56px;
-            margin: 0 auto 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 16px;
-            font-size: 1.6rem;
-            background: linear-gradient(145deg, #EEF2FF, #F5F3FF);
-            border: 1px solid #C7D2FE;
-            box-shadow: 0 6px 18px rgba(var(--indigo-rgb), 0.15);
+        .user-chip .who { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+        .user-chip .email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; font-size: 0.8rem; font-weight: 600; color: var(--ink); }
+        .user-chip .role { font-size: 0.68rem; color: #64748B; }
+        @media (max-width: 760px) {
+            .crumbs .sep, .crumbs .crumb-current { display: none; }
+            .user-chip .who { display: none; }
+            .user-chip { padding-right: 8px; }
+            #btn-logout .lbl { display: none; }
         }
-        .empty-state h3 { margin: 0 0 6px; font-size: 1rem; color: var(--bank-navy); }
 
-        .editor-top { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: stretch; }
-        .editor-top > .bank-card { display: flex; flex-direction: column; }
-        @media (max-width: 1180px) { .editor-top { grid-template-columns: minmax(0, 1fr); } }
+        /* ==========================================================================
+           CONTENT
+           ========================================================================== */
+        .workspace-area { background: var(--canvas); }
+        .admin-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 20px; }
+        .admin-content { max-width: 1400px; margin: 0 auto; }
+        .bank-card { margin-bottom: 14px; padding: 0; border-color: var(--line); border-radius: var(--card-radius); box-shadow: var(--card-shadow); }
+        .bank-card:hover { transform: none; border-color: var(--line); box-shadow: var(--card-shadow); }
+        .card-head { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+        .card-head h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 0.875rem; font-weight: 700; color: var(--ink); white-space: nowrap; }
+        .card-head h3 .ic { color: #64748B; }
+        .card-head .grow { flex: 1; min-width: 0; }
+        .card-body { padding: 16px; }
 
-        .editor-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border-subtle); }
-        .editor-title .heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
-        .editor-title .heading .title-icon { width: 40px; height: 40px; border-radius: 11px; font-size: 1.15rem; }
-        .editor-title .eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--indigo); }
-        .editor-title h2 { margin: 2px 0 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; color: var(--bank-navy); overflow-wrap: anywhere; }
-        .scheme-grid { display: grid; grid-template-columns: 120px minmax(0, 1fr) 110px 140px; gap: 14px; align-items: start; }
+        /* Page header (overview and editor) */
+        .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+        .page-header .titles { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .page-header .page-icon { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; color: var(--indigo); background: #fff; border: 1px solid var(--line); box-shadow: var(--card-shadow); }
+        .page-header h1 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; color: var(--ink); overflow-wrap: anywhere; }
+        .page-header .sub { display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap; margin-top: 4px; font-size: 0.8rem; color: #64748B; }
+        .page-header .sub .meta { display: inline-flex; align-items: center; gap: 5px; }
+        .page-header .actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; line-height: 1.5; white-space: nowrap; border: 1px solid transparent; }
+        .chip-code { font-family: var(--font-mono); color: var(--indigo); background: var(--indigo-soft); border-color: var(--indigo-line); }
+        .chip-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .chip-status.on { color: #047857; background: #ECFDF5; border-color: #A7F3D0; }
+        .chip-status.off { color: #B45309; background: #FFFBEB; border-color: #FDE68A; }
+        .chip-status.draft { color: #4338CA; background: var(--indigo-soft); border-color: var(--indigo-line); }
+
+        /* Overview (no scheme selected) */
+        .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+        .stat { display: flex; align-items: center; gap: 14px; padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: var(--card-radius); box-shadow: var(--card-shadow); }
+        .stat .stat-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px; color: var(--c, var(--indigo)); background: color-mix(in srgb, var(--c, var(--indigo)) 12%, #fff); }
+        .stat .label { font-size: 0.75rem; font-weight: 600; color: #64748B; }
+        .stat .value { margin-top: 2px; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+        .guide { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+        .guide .guide-main { padding: 28px; border-right: 1px solid var(--line); }
+        .guide .guide-main h2 { margin: 0 0 8px; font-size: 1.05rem; font-weight: 800; color: var(--ink); }
+        .guide .guide-main p { margin: 0 0 20px; max-width: 460px; font-size: 0.86rem; line-height: 1.65; color: #64748B; }
+        .guide .guide-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .steps { list-style: none; margin: 0; padding: 22px 28px; display: grid; gap: 16px; counter-reset: step; }
+        .steps li { position: relative; padding-left: 40px; font-size: 0.82rem; line-height: 1.55; color: #64748B; counter-increment: step; }
+        .steps li::before { content: counter(step); position: absolute; left: 0; top: 0; display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-size: 0.75rem; font-weight: 700; color: var(--indigo); background: var(--indigo-soft); border: 1px solid var(--indigo-line); }
+        .steps b { display: block; color: var(--ink); font-weight: 600; }
+        .kbd { display: inline-block; padding: 0 5px; font-family: var(--font-mono); font-size: 0.7rem; line-height: 1.6; color: var(--ink-2); background: #F8FAFC; border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 4px; }
+        @media (max-width: 1100px) { .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 760px) {
+            .guide { grid-template-columns: minmax(0, 1fr); }
+            .guide .guide-main { border-right: 0; border-bottom: 1px solid var(--line); padding: 22px 18px; }
+            .steps { padding: 20px 18px; }
+        }
+
+        /* Editor: details + activity */
+        .editor-top { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; }
+        .editor-top > .bank-card { display: flex; flex-direction: column; min-width: 0; }
+        .scheme-grid { display: grid; grid-template-columns: 130px minmax(0, 1fr) 120px 210px; gap: 14px; align-items: start; }
         .scheme-grid .form-group { margin-bottom: 0; }
-        @media (max-width: 760px) { .scheme-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-        .field-msg { display: block; min-height: 1em; margin-top: 4px; font-size: 0.72rem; color: var(--danger-text); }
-        .form-control.invalid { border-color: var(--status-danger); background: var(--status-danger-bg); }
+        .scheme-grid .form-label { margin-bottom: 6px; }
+        .scheme-grid .form-control { height: 38px; padding: 0 12px; }
 
-        .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.84rem; font-weight: 600; padding-top: 7px; }
+        .switch { display: inline-flex; align-items: center; gap: 10px; min-height: 38px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--ink-2); line-height: 1.3; }
         .switch input {
             appearance: none;
             -webkit-appearance: none;
             position: relative;
             flex-shrink: 0;
-            width: 38px;
-            height: 22px;
+            width: 36px;
+            height: 20px;
             margin: 0;
             border-radius: 999px;
-            background: var(--bg-muted);
-            border: 1px solid var(--border-default);
+            background: #CBD5E1;
             cursor: pointer;
-            transition: background 0.2s ease, border-color 0.2s ease;
+            transition: background 0.2s ease;
         }
         .switch input::after {
             content: '';
@@ -214,193 +358,306 @@
             height: 16px;
             border-radius: 50%;
             background: #fff;
-            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.3);
             transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .switch input:checked { background: var(--status-success); border-color: var(--status-success); }
+        .switch input:checked { background: #059669; }
         .switch input:checked::after { transform: translateX(16px); }
 
-        /* Recent changes */
-        .history-list { list-style: none; margin: 0; padding: 0; font-size: 0.8rem; flex: 1; }
-        .history-list li { position: relative; display: flex; flex-direction: column; gap: 1px; padding: 7px 0 7px 18px; border-bottom: 1px solid var(--border-subtle); }
-        .history-list li::before { content: ''; position: absolute; left: 3px; top: 13px; width: 7px; height: 7px; border-radius: 50%; background: #A5B4FC; box-shadow: 0 0 0 3px #EEF2FF; }
-        .history-list li:first-child::before { background: var(--indigo); }
-        .history-list li:last-child { border-bottom: 0; }
-        .history-list li.who { padding-left: 0; color: var(--text-muted); }
-        .history-list li.who::before { display: none; }
-        .history-list .who { color: var(--text-primary); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .history-list .when { color: var(--text-muted); font-size: 0.72rem; }
+        /* Activity: never makes the top row taller than the details card, scrolls inside */
+        .history-card .history-body { position: relative; flex: 1; min-height: 96px; }
+        .history-list { position: absolute; inset: 0; overflow-y: auto; list-style: none; margin: 0; padding: 10px 16px; font-size: 0.8rem; scrollbar-width: thin; }
+        .history-list li { position: relative; display: flex; flex-direction: column; gap: 1px; padding: 3px 0 9px 20px; }
+        .history-list li::before { content: ''; position: absolute; left: 3px; top: 8px; width: 8px; height: 8px; border-radius: 50%; background: #fff; border: 2px solid #A5B4FC; box-sizing: border-box; }
+        .history-list li::after { content: ''; position: absolute; left: 6.5px; top: 18px; bottom: -2px; width: 1px; background: var(--line); }
+        .history-list li:first-child::before { border-color: var(--indigo); background: var(--indigo); }
+        .history-list li:last-child::after { display: none; }
+        .history-list li.who { padding-left: 0; color: #64748B; }
+        .history-list li.who::before, .history-list li.who::after { display: none; }
+        .history-list .who { font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .history-list .when { font-size: 0.72rem; color: #64748B; }
 
-        /* Charge lines table */
-        .lines-scroll { overflow-x: auto; margin: 0 -20px; padding: 0 20px; }
+        /* Charge lines */
+        .lines-card { overflow: visible; }
+        .line-count { white-space: nowrap; padding: 1px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; color: #475569; background: #F1F5F9; border: 1px solid var(--line); }
+        .kind-legend { display: flex; align-items: center; gap: 12px; font-size: 0.75rem; color: #64748B; white-space: nowrap; overflow: hidden; }
+        .kind-legend span { display: inline-flex; align-items: center; gap: 5px; }
+        .kind-legend span::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: var(--k); }
+        .kind-legend b { color: var(--ink-2); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+        .help { position: relative; font-size: 0.78rem; }
+        .help summary { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 8px; font-weight: 600; color: var(--ink-2); cursor: pointer; list-style: none; user-select: none; border: 1px solid transparent; }
+        .help summary::-webkit-details-marker { display: none; }
+        .help summary:hover { background: #F1F5F9; }
+        .help[open] summary { color: var(--indigo); background: var(--indigo-soft); border-color: var(--indigo-line); }
+        .help-body {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            z-index: 20;
+            width: min(460px, calc(100vw - 32px));
+            padding: 16px;
+            border-radius: 10px;
+            background: #fff;
+            border: 1px solid var(--line);
+            box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.25);
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: var(--ink-2);
+        }
+        .help-body h4 { margin: 0 0 10px; font-size: 0.82rem; font-weight: 700; color: var(--ink); }
+        .help-body dl { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px 12px; margin: 0 0 12px; }
+        .help-body dt { display: flex; align-items: flex-start; gap: 6px; font-weight: 600; color: var(--ink); }
+        .help-body dt::before { content: ''; width: 8px; height: 8px; margin-top: 6px; flex-shrink: 0; border-radius: 2px; background: var(--k); }
+        .help-body dd { margin: 0; color: #64748B; }
+        .help-body p { margin: 0 0 8px; color: #64748B; }
+        .help-body p:last-child { margin-bottom: 0; }
+        .help-body code { font-family: var(--font-mono); font-size: 0.74rem; padding: 1px 5px; border-radius: 4px; color: #4338CA; background: var(--indigo-soft); }
+
+        .lines-scroll { overflow: auto; }
         .lines-table { width: 100%; min-width: 900px; border-collapse: separate; border-spacing: 0; font-size: 0.8rem; }
         .lines-table th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            padding: 8px 6px;
             text-align: left;
             font-size: 0.66rem;
-            font-weight: 800;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.06em;
-            color: var(--text-secondary);
-            padding: 8px 6px;
-            background: var(--bg-subtle);
-            border-top: 1px solid var(--border-subtle);
-            border-bottom: 1px solid var(--border-subtle);
             white-space: nowrap;
+            color: #64748B;
+            background: #F8FAFC;
+            border-bottom: 1px solid var(--line);
         }
-        .lines-table th:first-child { border-left: 1px solid var(--border-subtle); border-radius: 8px 0 0 8px; padding-left: 10px; }
-        .lines-table th:last-child { border-right: 1px solid var(--border-subtle); border-radius: 0 8px 8px 0; }
-        .lines-table td { padding: 7px 6px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; transition: background 0.15s ease; }
-        .lines-table td:first-child { padding-left: 10px; }
+        .lines-table th:first-child, .lines-table td:first-child { padding-left: 16px; }
+        .lines-table th:last-child, .lines-table td:last-child { padding-right: 16px; }
+        .lines-table td { padding: 5px 6px; vertical-align: top; border-bottom: 1px solid #F1F5F9; transition: background 0.12s ease; }
+        .lines-table tbody tr:last-child td { border-bottom: 0; }
         .lines-table tbody tr:hover td { background: #FAFBFF; }
-        .lines-table tr.row-error td { background: #FFF7F7; }
-        .lines-table tr.row-error td:first-child { box-shadow: inset 3px 0 0 var(--status-danger); }
-        .lines-table .form-control { padding: 6px 8px; font-size: 0.8rem; }
-        .lines-table .mono { font-family: var(--font-mono); }
-        .lines-table .col-order { width: 64px; white-space: nowrap; }
-        .lines-table .col-key { width: 150px; }
-        .lines-table .col-kind { width: 120px; }
-        .lines-table .col-total { width: 54px; text-align: center; }
-        .lines-table .col-preview { width: 110px; text-align: right; font-family: var(--font-mono); font-weight: 700; white-space: nowrap; padding-top: 13px; color: var(--bank-navy); }
-        .lines-table th.col-preview { font-family: inherit; font-weight: 800; padding-top: 8px; color: var(--text-secondary); }
-        .lines-table .col-del { width: 36px; }
-        .lines-table td.col-total input { width: 16px; height: 16px; margin-top: 8px; accent-color: var(--indigo); }
+        .lines-table tbody tr td:first-child { box-shadow: inset 3px 0 0 var(--k, transparent); }
+        .lines-table tr.kind-input { --k: var(--kind-input); }
+        .lines-table tr.kind-select { --k: var(--kind-select); }
+        .lines-table tr.kind-output { --k: var(--kind-output); }
+        .lines-table tr.row-error td { background: #FEF7F7; }
+        .lines-table tr.row-error td:first-child { box-shadow: inset 3px 0 0 #EF4444; }
+        .lines-table .form-control { height: 32px; padding: 0 9px; font-size: 0.8rem; border-radius: 7px; }
+        .lines-table select.form-control { padding-right: 4px; }
+        .lines-table .col-order { width: 92px; white-space: nowrap; }
+        .lines-table.dense .row-num { line-height: 28px; }
+        .lines-table.dense-2 .row-num { line-height: 24px; }
+        .lines-table .row-num { display: inline-block; width: 22px; margin-right: 4px; line-height: 32px; font-size: 0.72rem; font-weight: 700; color: #94A3B8; text-align: right; vertical-align: middle; font-variant-numeric: tabular-nums; }
+        .lines-table .col-key { width: 160px; }
+        .lines-table .col-kind { width: 124px; }
+        .lines-table .col-total { width: 56px; text-align: center; }
+        .lines-table td.col-total input { width: 16px; height: 16px; margin: 8px 0 0; accent-color: var(--indigo); cursor: pointer; }
+        .lines-table .col-preview { width: 120px; padding-top: 12px; text-align: right; font-family: var(--font-mono); font-weight: 700; white-space: nowrap; color: var(--ink); font-variant-numeric: tabular-nums; }
+        .lines-table th.col-preview { padding-top: 8px; font-family: inherit; color: #64748B; }
+        .lines-table .col-del { width: 44px; text-align: right; }
+        .preview-err { color: #DC2626 !important; }
         .icon-btn {
-            width: 24px;
-            height: 24px;
+            width: 26px;
+            height: 26px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin-top: 4px;
+            margin-top: 3px;
             padding: 0;
-            border: 1px solid var(--border-subtle);
+            vertical-align: top;
+            border: 1px solid transparent;
             border-radius: 6px;
-            background: var(--bg-surface);
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 0.7rem;
-            line-height: 1;
-            transition: all 0.15s ease;
-        }
-        .icon-btn:hover:not(:disabled) { background: #EEF2FF; color: var(--indigo); border-color: #C7D2FE; }
-        .icon-btn:disabled { opacity: 0.35; cursor: default; }
-        .icon-btn.danger:hover:not(:disabled) { background: var(--status-danger-bg); color: var(--status-danger); border-color: var(--status-danger-border); }
-        .preview-err { color: var(--status-danger) !important; }
-        .lines-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
-        .total-line {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 14px;
-            border-radius: 10px;
-            background: linear-gradient(145deg, #FFFFFF 0%, #FAFDFF 50%, #F0F7FF 100%);
-            border: 1px solid #BFDBFE;
-            font-size: 0.7rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            background: transparent;
             color: #64748B;
+            cursor: pointer;
+            transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
         }
-        .total-line span { font-family: var(--font-mono); font-size: 1.1rem; letter-spacing: 0; color: #1E40AF; }
-        .help {
-            font-size: 0.74rem;
-            color: var(--text-muted);
-            line-height: 1.7;
-            margin-top: 14px;
-            padding: 10px 12px;
-            border-radius: 8px;
-            background: var(--bg-surface-alt);
-            border: 1px dashed var(--border-default);
-        }
-        .help code { font-family: var(--font-mono); background: #EEF2FF; padding: 1px 5px; border-radius: 4px; color: #4338CA; }
+        .icon-btn:hover:not(:disabled) { background: var(--indigo-soft); color: var(--indigo); border-color: var(--indigo-line); }
+        .icon-btn:disabled { opacity: 0.3; cursor: default; }
+        .icon-btn.danger:hover:not(:disabled) { background: #FEF2F2; color: #DC2626; border-color: #FECACA; }
+        /* fitLines (admin.js) compacts rows in two steps when they do not fit the screen */
+        .lines-table.dense td { padding-top: 2px; padding-bottom: 2px; }
+        .lines-table.dense .form-control { height: 28px; font-size: 0.76rem; }
+        .lines-table.dense .col-preview { padding-top: 8px; }
+        .lines-table.dense td.col-total input { margin-top: 6px; }
+        .lines-table.dense .icon-btn { width: 24px; height: 24px; margin-top: 2px; }
+        .lines-table.dense-2 { font-size: 0.74rem; }
+        .lines-table.dense-2 td { padding-top: 1px; padding-bottom: 1px; }
+        .lines-table.dense-2 .form-control { height: 24px; font-size: 0.72rem; }
+        .lines-table.dense-2 .col-preview { padding-top: 5px; }
+        .lines-table.dense-2 td.col-total input { margin-top: 5px; width: 14px; height: 14px; }
+        .lines-table.dense-2 .icon-btn { width: 20px; height: 20px; margin-top: 2px; }
+        .lines-table.dense-2 .icon-btn .ic { width: 12px; height: 12px; }
 
-        /* ================= Save bar ================= */
+        .lines-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; flex-shrink: 0; padding: 10px 16px; border-top: 1px solid var(--line); background: #FCFCFD; border-radius: 0 0 var(--card-radius) var(--card-radius); }
+        .lines-footer .note { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #64748B; }
+        .total-line { display: flex; align-items: baseline; gap: 14px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #64748B; }
+        .total-line span { font-family: var(--font-mono); font-size: 1.15rem; letter-spacing: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+        /* ==========================================================================
+           SAVE BAR
+           ========================================================================== */
         .save-bar {
             flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            gap: 10px;
+            gap: 8px;
             padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-top: 1px solid rgba(226, 232, 240, 0.9);
-            box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.05);
+            background: #fff;
+            border-top: 1px solid var(--line);
+            box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.04);
             z-index: 10;
         }
-        .save-bar .state {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-right: auto;
-            min-width: 0;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.775rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            background: #F8FAFC;
-            border: 1px solid #E2E8F0;
-        }
-        .save-bar .state::before { content: ''; flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--status-success); box-shadow: 0 0 6px var(--status-success); }
-        .save-bar .state.dirty { color: var(--warn-text); background: var(--status-warning-bg); border-color: var(--status-warning-border); }
-        .save-bar .state.dirty::before { background: var(--bank-gold-bright); box-shadow: 0 0 6px var(--bank-gold-bright); animation: pulseSubDot 1.6s infinite ease-in-out; }
-        .save-bar .state.error { color: var(--danger-text); background: var(--status-danger-bg); border-color: var(--status-danger-border); }
-        .save-bar .state.error::before { background: var(--status-danger); box-shadow: 0 0 6px var(--status-danger); }
-        @media (max-width: 580px) { .save-bar { padding: 10px 12px; } .save-bar .state { font-size: 0.72rem; } }
+        .save-bar .state { display: inline-flex; align-items: center; gap: 8px; margin-right: auto; min-width: 0; font-size: 0.8rem; font-weight: 600; color: #64748B; }
+        .save-bar .state::before { content: ''; flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: #10B981; box-shadow: 0 0 0 3px #D1FAE5; }
+        .save-bar .state.dirty { color: #92400E; }
+        .save-bar .state.dirty::before { background: #F59E0B; box-shadow: 0 0 0 3px #FEF3C7; animation: pulseSubDot 1.6s infinite ease-in-out; }
+        .save-bar .state.error { color: #B91C1C; }
+        .save-bar .state.error::before { background: #EF4444; box-shadow: 0 0 0 3px #FEE2E2; }
+        .save-bar .hint { margin-right: 6px; font-size: 0.75rem; color: #94A3B8; white-space: nowrap; }
+        @media (max-width: 760px) { .save-bar { padding: 10px 12px; } .save-bar .state { font-size: 0.74rem; } .save-bar .hint { display: none; } }
 
-        /* ================= Modal & loader ================= */
-        .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            z-index: 50;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            background: rgba(7, 11, 20, 0.6);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-        }
-        .modal { width: 100%; max-width: 520px; max-height: 80vh; overflow-y: auto; margin: 0; border-radius: 16px; box-shadow: var(--shadow-xl); animation: pop 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+        /* ==========================================================================
+           MODAL & LOADER
+           ========================================================================== */
+        .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+        .modal { width: 100%; max-width: 540px; max-height: 85vh; display: flex; flex-direction: column; margin: 0; padding: 0; overflow: hidden; border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35); animation: pop 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
-        .modal ul { margin: 0 0 18px; padding-left: 18px; font-size: 0.82rem; line-height: 1.7; color: var(--text-secondary); }
-        .modal .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
-        #loader { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; background: rgba(248, 250, 252, 0.5); backdrop-filter: blur(2px); }
+        .modal-head { display: flex; gap: 14px; padding: 20px 22px 14px; }
+        .modal-head .m-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; color: #059669; background: #ECFDF5; border: 1px solid #A7F3D0; }
+        .modal-head h2 { margin: 2px 0 4px; font-size: 1.02rem; font-weight: 800; color: var(--ink); }
+        .modal-head p { margin: 0; font-size: 0.82rem; line-height: 1.5; color: #64748B; }
+        .modal ul { flex: 1; min-height: 0; overflow-y: auto; list-style: none; margin: 0 22px 18px; padding: 4px 0; font-size: 0.82rem; line-height: 1.5; color: var(--ink-2); border: 1px solid var(--line); border-radius: 10px; background: #FCFCFD; }
+        .modal li { position: relative; padding: 7px 12px 7px 30px; border-bottom: 1px solid #F1F5F9; overflow-wrap: anywhere; }
+        .modal li:last-child { border-bottom: 0; }
+        .modal li::before { content: ''; position: absolute; left: 13px; top: 14px; width: 6px; height: 6px; border-radius: 50%; background: var(--indigo); }
+        .modal .modal-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 22px; background: #F8FAFC; border-top: 1px solid var(--line); }
+        #loader { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; background: rgba(248, 250, 252, 0.55); backdrop-filter: blur(2px); }
         #loader.show { display: flex; }
-        .spinner { width: 36px; height: 36px; border: 3px solid #E0E7FF; border-top-color: var(--indigo); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .spinner { width: 34px; height: 34px; border: 3px solid #E0E7FF; border-top-color: var(--indigo); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ==========================================================================
+           LAYOUT: on laptop/desktop the editor fills the screen exactly; the charge
+           lines table takes the remaining height and scrolls under a fixed header
+           ========================================================================== */
+        @media (min-width: 769px) and (min-height: 500px) {
+            .admin-scroll { display: flex; flex-direction: column; }
+            .admin-content { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; }
+            #scheme-editor:not([hidden]) { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+            .admin-scroll:has(#scheme-editor:not([hidden])) { overflow: hidden; }
+            .page-header, .editor-top { flex-shrink: 0; }
+            .lines-card { flex: 1; min-height: 180px; margin-bottom: 0; display: flex; flex-direction: column; }
+            .lines-card .card-head { flex-shrink: 0; }
+            .lines-scroll { flex: 1; min-height: 0; }
+        }
+        @media (max-width: 1240px) {
+            .editor-top { grid-template-columns: minmax(0, 1fr) 260px; }
+            .scheme-grid { grid-template-columns: 110px minmax(0, 1fr) 100px; }
+            .scheme-grid .form-group:last-child { grid-column: 1 / -1; }
+            .scheme-grid .form-group:last-child .form-label { display: none; }
+            .switch { min-height: 0; }
+            .kind-legend span { display: none; }
+        }
+        @media (max-width: 768px) {
+            .admin-scroll { padding: 14px 12px; }
+            .page-header h1 { font-size: 1.12rem; }
+            .page-header .page-icon { display: none; }
+            .editor-top { grid-template-columns: minmax(0, 1fr); }
+            .scheme-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+            .scheme-grid .form-group:nth-child(2) { grid-column: 1 / -1; order: -1; }
+            .history-list { position: static; max-height: 170px; }
+            .history-card .history-body { min-height: 0; }
+            .lines-footer .note { display: none; }
+            .lines-card .card-head { gap: 6px; padding: 10px 12px; }
+            .help summary .lbl { display: none; }
+            .save-bar .state { white-space: normal; line-height: 1.3; }
+        }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
     </style>
 </head>
 <body>
 
-<!-- Login -->
+<!-- Icon set: referenced as <svg class="ic"><use href="#i-..."/></svg>, also from admin.js -->
+<svg width="0" height="0" style="position: absolute; overflow: hidden;" aria-hidden="true" focusable="false">
+    <symbol id="i-bank" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V10"/><path d="M19 21V10"/><path d="M9.5 21V10"/><path d="M14.5 21V10"/><path d="M12 3 3 8h18z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h10"/><path d="M18 6h2"/><circle cx="16" cy="6" r="2"/><path d="M4 12h4"/><path d="M12 12h8"/><circle cx="10" cy="12" r="2"/><path d="M4 18h12"/><path d="M20 18h0"/><circle cx="18" cy="18" r="2"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 10v10"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5v.7"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-2.3 3.2"/><path d="M6.6 6.6A17.3 17.3 0 0 0 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="m2 2 20 20"/></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 9v6"/><path d="M14 9v6"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 10h18"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></symbol>
+</svg>
+
+<!-- Sign in -->
 <section id="login-view" class="login-screen" hidden>
-    <form class="login-card" id="login-form" novalidate>
-        <div class="login-brand">
-            <div class="brand-logo-frame"><img src="assets/img/logo.png" alt="Quick Access" class="brand-logo"></div>
+    <aside class="login-aside">
+        <a class="login-logo" href="index.html">
+            <div class="brand-logo-frame"><img src="assets/img/logo.png" alt="" class="brand-logo"></div>
             <div>
                 <div class="brand-title"><span class="brand-title-main">QUICK</span><span class="brand-title-accent">ACCESS</span></div>
                 <div class="brand-sub"><span class="brand-sub-dot"></span><span class="brand-sub-text">Loan Admin</span></div>
             </div>
+        </a>
+        <div class="login-pitch">
+            <h1>Loan charges,<br>managed in one place.</h1>
+            <p>Configure processing fees, stamp duty, insurance and every other deduction for each loan scheme. The Loan Charges calculator in every branch uses these values.</p>
+            <ul class="login-points">
+                <li><span class="pt-icon"><svg class="ic"><use href="#i-sliders"/></svg></span><span><b>Formula-driven charges</b>Inputs, dropdowns and calculated lines checked by the same engine the calculator uses.</span></li>
+                <li><span class="pt-icon"><svg class="ic"><use href="#i-history"/></svg></span><span><b>Full audit trail</b>Every save is recorded with who made it and when.</span></li>
+                <li><span class="pt-icon"><svg class="ic"><use href="#i-shield"/></svg></span><span><b>Administrators only</b>Changes are re-checked on the server before they are saved.</span></li>
+            </ul>
         </div>
-        <div class="login-body">
-            <h2>Administrator sign in</h2>
-            <p>Only accounts registered as loan administrators can change loan charges. Changes apply to every branch.</p>
+        <div class="login-foot">Quick Access · Internal tool for authorised staff</div>
+    </aside>
+
+    <div class="login-main">
+        <form class="login-card" id="login-form" novalidate>
+            <div class="mobile-brand">
+                <div class="brand-logo-frame"><img src="assets/img/logo.png" alt="" class="brand-logo"></div>
+                <div class="brand-title"><span class="brand-title-main">QUICK</span><span class="brand-title-accent">ACCESS</span></div>
+            </div>
+            <h2>Sign in</h2>
+            <p class="lead">Use your loan administrator account. Changes you save apply to every branch.</p>
             <div class="form-error" id="login-error" role="alert"></div>
             <div class="form-group">
-                <label class="form-label" for="login-email">Email</label>
-                <input class="form-control" id="login-email" type="email" autocomplete="username" required>
+                <label class="form-label" for="login-email">Email address</label>
+                <input class="form-control" id="login-email" type="email" autocomplete="username" placeholder="name@bank.com" required>
             </div>
             <div class="form-group">
                 <label class="form-label" for="login-password">Password</label>
-                <input class="form-control" id="login-password" type="password" autocomplete="current-password" required>
+                <div class="input-wrap">
+                    <input class="form-control" id="login-password" type="password" autocomplete="current-password" required>
+                    <button type="button" class="reveal" id="btn-reveal" aria-label="Show password" title="Show password"><svg class="ic"><use href="#i-eye"/></svg></button>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary" id="btn-login">Sign in</button>
-            <a class="login-back" href="index.html">← Back to calculator</a>
-        </div>
-    </form>
+            <div class="login-meta">
+                <a href="index.html"><svg class="ic ic-sm"><use href="#i-arrow-left"/></svg>Back to calculator</a>
+                <span class="secure"><svg class="ic ic-sm"><use href="#i-lock"/></svg>Secure session</span>
+            </div>
+        </form>
+    </div>
 </section>
 
 <!-- Editor -->
@@ -417,10 +674,16 @@
         </div>
 
         <div class="sidebar-tools">
-            <div class="nav-category"><span class="cat-dot"></span>Fee schemes<span class="cat-line"></span></div>
+            <div class="tools-head">
+                <h3>Fee schemes</h3>
+                <span class="tools-count" id="scheme-count">0</span>
+            </div>
             <div class="scheme-list-tools">
-                <input class="form-control" id="scheme-search" type="search" placeholder="Search code or name" aria-label="Search schemes">
-                <button type="button" class="btn btn-primary btn-sm" id="btn-new" title="New scheme">+ New</button>
+                <div class="search-box">
+                    <svg class="ic ic-sm"><use href="#i-search"/></svg>
+                    <input class="form-control" id="scheme-search" type="search" placeholder="Search code or name" aria-label="Search schemes">
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-new" title="Create a new scheme"><svg class="ic ic-sm"><use href="#i-plus"/></svg>New</button>
             </div>
         </div>
 
@@ -431,9 +694,8 @@
         <div class="sidebar-footer">
             <a class="nav-item" href="index.html">
                 <span class="nav-indicator"></span>
-                <span class="nav-icon-box" style="background: rgba(56, 189, 248, 0.15);">←</span>
+                <span class="nav-icon-box"><svg class="ic ic-sm"><use href="#i-arrow-left"/></svg></span>
                 <span class="nav-text">Back to Calculator</span>
-                <span class="nav-arrow">→</span>
             </a>
         </div>
     </aside>
@@ -443,50 +705,91 @@
     <main class="workspace-area">
         <header class="topbar">
             <div class="topbar-left">
-                <button type="button" class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Show schemes" title="Show schemes">☰</button>
-                <div class="current-tool-title">
-                    <span class="tool-icon-badge" style="background: rgba(99, 102, 241, 0.15); color: #6366F1;">🏦</span>
-                    <span>Loan Charges Admin</span>
-                </div>
+                <button type="button" class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Show schemes" title="Show schemes"><svg class="ic"><use href="#i-menu"/></svg></button>
+                <nav class="crumbs" aria-label="Breadcrumb">
+                    <span class="crumb-root"><span class="crumb-icon"><svg class="ic ic-sm"><use href="#i-bank"/></svg></span>Loan Charges Admin</span>
+                    <svg class="ic ic-sm sep"><use href="#i-chevron-right"/></svg>
+                    <span class="crumb-current" id="crumb-current">Overview</span>
+                </nav>
             </div>
             <div class="topbar-right">
                 <div class="header-user" id="header-user" hidden>
-                    <span class="user-chip"><span class="avatar" aria-hidden="true">👤</span><span class="email" id="user-email"></span></span>
-                    <button type="button" class="btn btn-outline btn-sm" id="btn-logout">Sign out</button>
+                    <span class="user-chip">
+                        <span class="avatar" id="user-avatar" aria-hidden="true">A</span>
+                        <span class="who"><span class="email" id="user-email"></span><span class="role">Loan administrator</span></span>
+                    </span>
+                    <button type="button" class="btn btn-ghost btn-sm" id="btn-logout" title="Sign out"><svg class="ic ic-sm"><use href="#i-logout"/></svg><span class="lbl">Sign out</span></button>
                 </div>
             </div>
         </header>
 
         <div class="admin-scroll">
             <div class="admin-content">
-                <div class="bank-card empty-state" id="empty-state">
-                    <div class="empty-icon" aria-hidden="true">🏦</div>
-                    <h3>No scheme selected</h3>
-                    <p>Select a scheme from the list to edit its charges, or create a new one.</p>
+                <!-- Overview: shown when no scheme is selected -->
+                <div id="empty-state">
+                    <div class="page-header">
+                        <div class="titles">
+                            <span class="page-icon"><svg class="ic ic-lg"><use href="#i-layers"/></svg></span>
+                            <div>
+                                <h1>Fee schemes</h1>
+                                <div class="sub">Charges deducted from each loan, used by the Loan Charges calculator in every branch.</div>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button type="button" class="btn btn-primary btn-sm" id="btn-new-empty"><svg class="ic ic-sm"><use href="#i-plus"/></svg>New scheme</button>
+                        </div>
+                    </div>
+
+                    <div class="stat-grid">
+                        <div class="stat" style="--c: #4F46E5;"><span class="stat-icon"><svg class="ic ic-lg"><use href="#i-layers"/></svg></span><div><div class="label">Total schemes</div><div class="value" id="stat-total">0</div></div></div>
+                        <div class="stat" style="--c: #059669;"><span class="stat-icon"><svg class="ic ic-lg"><use href="#i-check-circle"/></svg></span><div><div class="label">Active</div><div class="value" id="stat-active">0</div></div></div>
+                        <div class="stat" style="--c: #D97706;"><span class="stat-icon"><svg class="ic ic-lg"><use href="#i-pause"/></svg></span><div><div class="label">Inactive</div><div class="value" id="stat-inactive">0</div></div></div>
+                        <div class="stat" style="--c: #0284C7;"><span class="stat-icon"><svg class="ic ic-lg"><use href="#i-list"/></svg></span><div><div class="label">Charge lines</div><div class="value" id="stat-lines">0</div></div></div>
+                    </div>
+
+                    <div class="bank-card guide">
+                        <div class="guide-main">
+                            <h2>Select a scheme to edit its charges</h2>
+                            <p>Pick a scheme from the list to change its name, status or charge lines, or start a new scheme. Nothing is saved until you review and confirm your changes.</p>
+                            <div class="guide-actions">
+                                <button type="button" class="btn btn-outline btn-sm" id="btn-open-list"><svg class="ic ic-sm"><use href="#i-search"/></svg>Find a scheme</button>
+                            </div>
+                        </div>
+                        <ol class="steps">
+                            <li><b>Edit the scheme</b>Change details and charge lines. Problems are flagged as you type.</li>
+                            <li><b>Check the preview</b>Each calculated line shows its result using the default values.</li>
+                            <li><b>Review and save</b>Press <span class="kbd">Ctrl</span> + <span class="kbd">S</span> or Save changes to see a summary before anything is written.</li>
+                        </ol>
+                    </div>
                 </div>
 
+                <!-- Scheme editor -->
                 <div id="scheme-editor" hidden>
-                    <div class="editor-top">
-                        <div class="bank-card accent-card">
-                            <div class="editor-title">
-                                <div class="heading">
-                                    <span class="title-icon" aria-hidden="true">🏦</span>
-                                    <div>
-                                        <div class="eyebrow">Loan scheme</div>
-                                        <h2 id="editor-heading"></h2>
-                                    </div>
-                                </div>
-                                <button type="button" class="btn btn-outline btn-sm" id="btn-duplicate" title="Start a new scheme from a copy of this one">⧉ Duplicate</button>
+                    <div class="page-header">
+                        <div class="titles">
+                            <span class="page-icon"><svg class="ic ic-lg"><use href="#i-bank"/></svg></span>
+                            <div>
+                                <h1><span id="editor-heading"></span><span class="chip chip-code" id="editor-code" hidden></span><span class="chip chip-status" id="editor-status"></span></h1>
+                                <div class="sub" id="editor-meta"></div>
                             </div>
-                            <div class="scheme-grid">
+                        </div>
+                        <div class="actions">
+                            <button type="button" class="btn btn-outline btn-sm" id="btn-duplicate" title="Start a new scheme from a copy of this one"><svg class="ic ic-sm"><use href="#i-copy"/></svg>Duplicate</button>
+                        </div>
+                    </div>
+
+                    <div class="editor-top">
+                        <div class="bank-card scheme-card">
+                            <div class="card-head"><h3><svg class="ic"><use href="#i-sliders"/></svg>Scheme details</h3></div>
+                            <div class="card-body scheme-grid">
                                 <div class="form-group">
                                     <label class="form-label" for="s-code">Scheme code</label>
-                                    <input class="form-control mono" id="s-code" inputmode="numeric" maxlength="10">
+                                    <input class="form-control mono" id="s-code" inputmode="numeric" maxlength="10" placeholder="e.g. 101">
                                     <span class="field-msg" data-for="code"></span>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label" for="s-name">Scheme name</label>
-                                    <input class="form-control" id="s-name" maxlength="100">
+                                    <input class="form-control" id="s-name" maxlength="100" placeholder="e.g. GOLD LOAN">
                                     <span class="field-msg" data-for="name"></span>
                                 </div>
                                 <div class="form-group">
@@ -501,47 +804,52 @@
                             </div>
                         </div>
 
-                        <div class="bank-card accent-card accent-emerald">
-                            <div class="card-title">
-                                <span class="title-icon ti-emerald" aria-hidden="true">🕘</span>
-                                <span class="grow">Recent changes</span>
-                            </div>
-                            <ul class="history-list" id="history-list"></ul>
+                        <div class="bank-card history-card">
+                            <div class="card-head"><h3><svg class="ic"><use href="#i-history"/></svg>Activity</h3></div>
+                            <div class="history-body"><ul class="history-list" id="history-list"></ul></div>
                         </div>
                     </div>
 
-                    <div class="bank-card accent-card accent-blue">
-                        <div class="card-title">
-                            <span class="title-icon ti-blue" aria-hidden="true">🧾</span>
-                            <span class="grow">Charge lines</span>
-                            <span class="badge badge-info" id="line-count"></span>
+                    <div class="bank-card lines-card">
+                        <div class="card-head">
+                            <h3><svg class="ic"><use href="#i-list"/></svg>Charge lines</h3>
+                            <span class="line-count" id="line-count"></span>
+                            <div class="grow kind-legend" id="kind-legend"></div>
+                            <details class="help">
+                                <summary title="Formula help"><svg class="ic ic-sm"><use href="#i-help"/></svg><span class="lbl">Formula help</span></summary>
+                                <div class="help-body">
+                                    <h4>Line types</h4>
+                                    <dl>
+                                        <dt style="--k: var(--kind-input);">Input</dt><dd>Typed by staff. The default value is optional.</dd>
+                                        <dt style="--k: var(--kind-select);">Dropdown</dt><dd>Choices written as <code>1st:0, 2nd:1</code> (label:value).</dd>
+                                        <dt style="--k: var(--kind-output);">Calculated</dt><dd>A formula such as <code>IF(history=0, amount*1.5%, amount*1%)</code>.</dd>
+                                    </dl>
+                                    <p>Formulas refer to other lines by their key. Available functions: <code>SUM IF AND OR NOT MIN MAX ROUND ROUNDUP ROUNDDOWN MROUND INT ABS PMT</code>.</p>
+                                    <p>The Preview column uses each input's default value and the first dropdown choice.</p>
+                                </div>
+                            </details>
+                            <button type="button" class="btn btn-primary btn-sm" id="btn-add-line"><svg class="ic ic-sm"><use href="#i-plus"/></svg>Add line</button>
                         </div>
                         <div class="lines-scroll">
                             <table class="lines-table">
                                 <thead>
                                     <tr>
-                                        <th class="col-order">Order</th>
+                                        <th class="col-order">#</th>
                                         <th class="col-key">Key</th>
                                         <th>Label</th>
                                         <th class="col-kind">Type</th>
                                         <th>Formula / default / options</th>
                                         <th class="col-total" title="Add this line to TOTAL DEDUCTIONS">Total</th>
                                         <th class="col-preview" title="Result using each line's default value">Preview</th>
-                                        <th class="col-del"></th>
+                                        <th class="col-del"><span class="sr-only" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Delete</span></th>
                                     </tr>
                                 </thead>
                                 <tbody id="lines-body"></tbody>
                             </table>
                         </div>
                         <div class="lines-footer">
-                            <button type="button" class="btn btn-outline btn-sm" id="btn-add-line">+ Add line</button>
-                            <div class="total-line">Total deductions (preview) <span id="preview-total">0.00</span></div>
-                        </div>
-                        <div class="help">
-                            <b>Type:</b> <i>Input</i> is typed by staff (optional default value), <i>Dropdown</i> lists choices as
-                            <code>1st:0, 2nd:1</code>, <i>Calculated</i> uses a formula such as <code>IF(history=0, amount*1.5%, amount*1%)</code>.
-                            Formulas refer to other lines by key. Functions: <code>SUM IF AND OR NOT MIN MAX ROUND ROUNDUP ROUNDDOWN MROUND INT ABS PMT</code>.
-                            The Preview column uses each input's default value and the first dropdown choice.
+                            <span class="note"><svg class="ic ic-sm"><use href="#i-info"/></svg>Preview uses default values and the first dropdown choice.</span>
+                            <div class="total-line">Total deductions <span id="preview-total">0.00</span></div>
                         </div>
                     </div>
                 </div>
@@ -550,19 +858,26 @@
 
         <div class="save-bar" id="save-bar" hidden>
             <span class="state" id="save-state">No changes</span>
-            <button type="button" class="btn btn-outline btn-sm" id="btn-discard" disabled>Discard</button>
-            <button type="button" class="btn btn-success btn-sm" id="btn-save" disabled>Save changes</button>
+            <span class="hint"><span class="kbd">Ctrl</span> + <span class="kbd">S</span> to save</span>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-discard" disabled><svg class="ic ic-sm"><use href="#i-undo"/></svg>Discard</button>
+            <button type="button" class="btn btn-success btn-sm" id="btn-save" disabled><svg class="ic ic-sm"><use href="#i-save"/></svg>Save changes</button>
         </div>
     </main>
 </div>
 
 <div class="modal-backdrop" id="confirm-modal" hidden>
-    <div class="bank-card modal accent-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-        <div class="card-title" id="confirm-title">Save changes?</div>
+    <div class="bank-card modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
+        <div class="modal-head">
+            <span class="m-icon"><svg class="ic ic-lg"><use href="#i-save"/></svg></span>
+            <div>
+                <h2 id="confirm-title">Save changes?</h2>
+                <p id="confirm-desc">Review the changes below. Once saved, they apply to the Loan Charges calculator in every branch.</p>
+            </div>
+        </div>
         <ul id="confirm-list"></ul>
         <div class="modal-actions">
             <button type="button" class="btn btn-outline btn-sm" id="btn-confirm-cancel">Cancel</button>
-            <button type="button" class="btn btn-success btn-sm" id="btn-confirm-save">Save</button>
+            <button type="button" class="btn btn-success btn-sm" id="btn-confirm-save">Save changes</button>
         </div>
     </div>
 </div>
