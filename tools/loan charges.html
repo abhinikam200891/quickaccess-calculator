@@ -601,6 +601,7 @@
                 populateProductDropdown(c.list);
                 setConnStatus('cached', c.list.length, c.t);
                 toggleLoader(false);
+                revalidateSchemes(c.list);
                 return;
             }
         }
@@ -619,6 +620,20 @@
             toggleLoader(false);
             handleFetchProductsFailure(errMsg);
         });
+    }
+
+    // Show the cached copy at once, then check the server in the background so charges
+    // edited on admin.html reach this page without waiting for the cache to expire.
+    function revalidateSchemes(cachedList) {
+        fetchSchemes(function (list) {
+            if (list.length === 0) return;
+            cacheSet('schemes', list);
+            setConnStatus('online', list.length, Date.now());
+            if (JSON.stringify(list) !== JSON.stringify(cachedList)) {
+                populateProductDropdown(list);
+                showStatus("Loan charges were updated by the administrator", "info");
+            }
+        }, function () { /* stay on the cached copy */ });
     }
 
     /**
