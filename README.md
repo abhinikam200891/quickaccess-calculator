@@ -29,7 +29,7 @@ Saving goes through the database function `admin_save_loan_scheme()`, which re-c
 
 One-time setup:
 
-1. Apply `supabase/migrations/20261012120000_loan_admin.sql` (SQL Editor, or `npx supabase db push --linked`).
+1. Apply `supabase/migrations/20261012120000_loan_admin.sql` (SQL Editor, or `npx supabase db push --linked`), then `20261012170000_loan_admin_scheme_code.sql`, which makes saving work where `loan_scheme_fields` links lines to schemes by `scheme_code` (the live layout).
 2. Supabase Dashboard → Authentication → Users → **Add user** (email + password) for each administrator. Turn off public sign-ups under Authentication → Sign In / Providers.
 3. Allow that user to edit (SQL Editor):
    ```sql
