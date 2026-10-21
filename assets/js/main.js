@@ -1,5 +1,6 @@
     const framePool = new Map();
     let currentViewId = 'dashboard';
+    let keepNavFocus = null; // menu button to refocus after its tool page loads (pages focus their first input)
     const subpageActiveTools = new Set();
 
     // Listen for subpage navigation events from child calculator iframes (e.g., ddsrules.html)
@@ -182,6 +183,35 @@
 
     buildToolRegistry(window.__DYNAMIC_PAGES__);
 
+    // Arrow Up/Down (and Home/End) on a focused menu item opens the previous/next tool;
+    // Enter / Arrow Right on the open tool moves into its page
+    const navScroller = document.querySelector('.nav-scroller');
+    if (navScroller) {
+        navScroller.addEventListener('keydown', (e) => {
+            const items = Array.from(navScroller.querySelectorAll('.nav-item'));
+            const cur = items.indexOf(document.activeElement);
+            if (cur === -1) return;
+            const frame = framePool.get(currentViewId);
+            if ((e.key === 'Enter' || e.key === 'ArrowRight') && frame && items[cur].classList.contains('active')) {
+                e.preventDefault();
+                keepNavFocus = null;
+                frame.focus();
+                return;
+            }
+            if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
+            e.preventDefault();
+            let next = cur;
+            if (e.key === 'ArrowUp') next = Math.max(0, cur - 1);
+            else if (e.key === 'ArrowDown') next = Math.min(items.length - 1, cur + 1);
+            else if (e.key === 'Home') next = 0;
+            else next = items.length - 1;
+            if (next === cur) return;
+            items[next].focus();
+            items[next].scrollIntoView({ block: 'nearest' });
+            items[next].click();
+        });
+    }
+
     // --- 1.1 RESPONSIVE SIDEBAR MOBILE / TABLET CONTROLS ---
     function toggleSidebar() {
         const sidebar = document.querySelector('.sidebar');
@@ -243,6 +273,7 @@
 
     function switchView(toolId, navBtn) {
         currentViewId = toolId;
+        keepNavFocus = navBtn || null;
         closeSidebar();
         const tool = toolRegistry.find(t => t.id === toolId);
         if (!tool) {
@@ -353,6 +384,11 @@
                         }
                     }
                 } catch(e) {}
+
+                // Opened from the menu: keep focus there so arrow keys keep moving through it
+                if (keepNavFocus && currentViewId === toolId && document.activeElement === frame) {
+                    keepNavFocus.focus();
+                }
 
                 // Forward keyboard shortcuts from inside calculator iframe to parent workstation shell
                 try {

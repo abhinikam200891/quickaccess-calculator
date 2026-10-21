@@ -1250,11 +1250,31 @@
         .nav-scroller {
             padding: clamp(2px, 0.8vh, 8px) 0;
             overflow-x: hidden;
-            scrollbar-width: none; /* scrollbar only matters on very short screens */
+        }
+
+        /* Thin scrollbar, shown only when the menu is taller than the sidebar */
+        @supports (-moz-appearance: none) {
+            .nav-scroller {
+                scrollbar-width: thin;
+                scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+            }
         }
 
         .nav-scroller::-webkit-scrollbar {
-            width: 0;
+            width: 4px;
+        }
+
+        .nav-scroller::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .nav-scroller::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.35);
+            border-radius: 4px;
+        }
+
+        .nav-scroller::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.6);
         }
 
         .nav-category {

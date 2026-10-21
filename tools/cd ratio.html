@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="mr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>सी.डी. रेशो</title>
+<link rel="stylesheet" href="../assets/css/banking-theme.css">
+<style>
+/* Colours and shapes come from banking-theme.css, like the other tools */
+:root{
+  --ink:var(--text-primary); --muted:var(--text-muted); --line:var(--border-subtle); --line2:var(--border-default);
+  --brand:var(--bank-navy); --brand-soft:var(--bank-blue-subtle);
+  --bs:var(--status-success-bg); --bs-line:var(--status-success-border);
+  --need:var(--status-warning-bg); --need-line:var(--bank-gold-bright);
+}
+/* Text scales with screen height so the whole sheet fits on one screen */
+html{font-size:clamp(12px, 1.95vh, 16px)}
+html,body{height:auto}
+body{min-height:100vh;display:flex;flex-direction:column;background:var(--bg-app);color:var(--ink);padding:.8rem 16px 1rem;
+  font:1rem/1.3 var(--font-family),"Nirmala UI","Mangal",sans-serif}
+
+/* Header: a toolbar card, same look as the card titles of the other tools */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem;padding:.55rem 1rem;max-width:1400px;width:100%;margin:0 auto .8rem;
+  background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)}
+.top h1{font-size:1.15rem;font-weight:700;color:var(--bank-navy);white-space:nowrap;letter-spacing:-.01em}
+.top .info{font-size:.85rem;color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tools{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center}
+.tools .btn{font-size:.85rem;padding:.4rem .85rem;white-space:nowrap}
+.btn input{display:none}
+.unitSel{font:inherit;font-size:.85rem;font-weight:600;padding:.38rem .6rem;border-radius:var(--radius-sm);border:1px solid var(--border-default);
+  background:var(--bg-subtle);color:var(--text-primary);cursor:pointer;outline:none}
+.unitSel:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.lang{display:flex;gap:3px;padding:3px;background:var(--bg-subtle);border:1px solid var(--border-default);border-radius:var(--radius-sm)}
+.lang button{font:inherit;font-size:.8rem;font-weight:600;padding:.28rem .7rem;border:none;border-radius:var(--radius-xs);background:transparent;color:var(--text-secondary);cursor:pointer}
+.lang button.on{background:var(--bg-surface);color:var(--bank-navy);box-shadow:var(--shadow-xs)}
+
+/* Layout */
+.grid{flex:1;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:.9rem;
+  max-width:1400px;width:100%;margin:0 auto;align-items:start}
+.side{display:flex;flex-direction:column;gap:.9rem}
+.card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-md);overflow:hidden;
+  box-shadow:0 2px 8px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.02)}
+
+/* Sheet tables, styled like .bank-table */
+table{width:100%;border-collapse:collapse}
+th,td{padding:.28rem .6rem;border-bottom:1px solid var(--line);vertical-align:middle;text-align:left}
+th{background:linear-gradient(180deg,#1E293B 0%,#0F172A 100%);color:var(--text-inverse);font-size:.72rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;padding-top:.5rem;padding-bottom:.5rem}
+tbody tr:hover td{background:#F8FAFC}
+.no{width:3.2rem;text-align:center;color:var(--muted);font-weight:600;white-space:nowrap}
+th.no{color:var(--text-inverse)}
+/* Wide enough for rupee amounts, so switching units never moves anything */
+.amt{width:10.8rem;text-align:right;font-variant-numeric:tabular-nums}
+th.amt{text-align:right}
+tr.grp td{border-top:2px solid var(--line2)}
+tr.grp td.no{color:var(--bank-blue)}
+tr.tot td{background:var(--bg-subtle);font-weight:700;color:var(--bank-navy)}
+tr:last-child td{border-bottom:none}
+td.amt span{display:block;padding:.2rem .4rem}
+/* Working for rows 8 and 9: small sub-rows, boxes in the same Amount column */
+tr.sb td{font-size:.86rem;color:var(--muted);padding-top:.12rem;padding-bottom:.12rem;border-bottom-style:dashed}
+tr.sb td.lbl{padding-left:1.8rem}
+
+input.n{width:100%;font:inherit;text-align:right;padding:.2rem .45rem;border:1px solid var(--line2);border-radius:var(--radius-xs);
+  background:var(--bg-surface);color:var(--ink);font-variant-numeric:tabular-nums;outline:none;transition:border-color .15s,box-shadow .15s}
+input.n:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+tr.sb input.n{font-size:.86rem;padding:.08rem .45rem}
+input.pct{width:4.6rem;display:block;margin-left:auto}
+input.bs{background:var(--bs);border-color:var(--bs-line)}
+input.need{background:var(--need);border-color:var(--need-line)}
+
+/* Row 6: CD ratio, the result */
+tr.cdrow td{background:var(--brand-soft);color:var(--bank-navy);font-weight:800;font-size:1.08rem;border-top:2px solid var(--bank-navy);padding-top:.5rem;padding-bottom:.5rem}
+tr.cdrow td.amt span{color:var(--bank-blue)}
+tbody tr.cdrow:hover td{background:var(--brand-soft)}
+
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.4rem 1rem;font-size:.8rem;color:var(--muted);padding:0 .2rem}
+.foot .key{display:flex;gap:1rem;flex-wrap:wrap}
+.foot i{display:inline-block;width:.85rem;height:.85rem;border:1px solid;border-radius:3px;vertical-align:-1px;margin-right:.3rem}
+.foot .unit{font-weight:700;color:var(--bank-navy)}
+
+/* Narrow screens: one column (scrolling is unavoidable on phones) */
+@media (max-width:980px){
+  html{font-size:14px}
+  .grid{grid-template-columns:1fr}
+  .top .info{flex-basis:100%;order:3}
+}
+@media (max-width:520px){
+  .amt{width:9.6rem}
+  .no{width:2.4rem}
+  th,td{padding:.3rem .35rem}
+  tr.sb td.lbl{padding-left:.9rem}
+  .tools{width:100%}
+  .lang{margin-left:auto}
+}
+/* Print / PDF: one A4 landscape page, both columns side by side; tables use the theme's print style */
+@page{size:A4 landscape;margin:8mm}
+@media print{
+  html{font-size:10.5px}
+  body{min-height:0;padding:0 !important}
+  .tools,.foot .key{display:none}
+  .top{border:none;border-bottom:2px solid #000;border-radius:0;padding:0 0 .4rem;margin:0}
+  .top h1,.top .info{color:#000}
+  .grid{grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);padding:.5rem 0 0;max-width:none;gap:.6rem}
+  .card{border:none;border-radius:0}
+  .amt,th.amt{text-align:right !important}
+  input.n{border:none !important;text-align:right}
+  tr.tot td,tr.cdrow td{background:#EAEAEA !important;font-weight:800}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1 id="tTitle"></h1>
+  <span class="info" id="info"></span>
+  <div class="tools">
+    <label class="btn btn-primary"><span id="tFile"></span><input type="file" id="file" accept=".xlsx,.xlsm"></label>
+    <select class="unitSel" id="unit" onchange="setUnit(this.value)">
+      <option value="lakh"></option><option value="crore"></option><option value="rupee"></option>
+    </select>
+    <button class="btn btn-outline" id="tPrint" onclick="window.print()"></button>
+    <button class="btn btn-outline" id="tPdf" onclick="savePdf()"></button>
+    <div class="lang">
+      <button id="lang_mr" onclick="setLang('mr')">मराठी</button>
+      <button id="lang_en" onclick="setLang('en')">English</button>
+    </div>
+  </div>
+</header>
+
+<main class="grid">
+  <section class="card">
+    <table>
+      <thead><tr><th class="no thNo"></th><th class="thPart"></th><th class="amt thAmt"></th></tr></thead>
+      <tbody id="tbL"></tbody>
+    </table>
+  </section>
+  <section class="side">
+    <div class="card">
+      <table>
+        <thead><tr><th class="no thNo"></th><th class="thPart"></th><th class="amt thAmt"></th></tr></thead>
+        <tbody id="tbR"></tbody>
+      </table>
+    </div>
+    <div class="foot">
+      <span class="key">
+        <span><i style="background:var(--bs);border-color:var(--bs-line)"></i><span id="tKeyBs"></span></span>
+        <span><i style="background:var(--need);border-color:var(--need-line)"></i><span id="tKeyNeed"></span></span>
+      </span>
+      <span class="unit" id="tUnit"></span>
+    </div>
+  </section>
+</main>
+
+<script>
+// Every amount is kept in rupees (input.dataset.raw) and shown in the chosen unit
+const UNITS = {lakh: 1e5, crore: 1e7, rupee: 1};
+let unitKey = "lakh";
+const U = () => UNITS[unitKey];
+const $ = id => document.getElementById(id);
+const f2 = n => (n == null || !isFinite(n)) ? "" : n.toFixed(2);
+const key = s => String(s).toLowerCase().replace(/[^a-z0-9&]/g, "");
+const toNum = v => {
+  if (typeof v === "number") return v;
+  if (typeof v === "string") { const t = v.replace(/,/g, "").trim(); if (/^-?\d+(\.\d+)?$/.test(t)) return +t; }
+  return null;
+};
+// Amounts are shown with Indian commas, e.g. 1,58,78,89,500.00
+const fmt = n => (n == null || !isFinite(n)) ? "" : n.toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const parseAmt = s => parseFloat(String(s).replace(/,/g, ""));
+function setRaw(el, rupees) {
+  el.dataset.raw = (rupees == null || !isFinite(rupees)) ? "" : rupees;
+  el.value = el.dataset.raw === "" ? "" : fmt(rupees / U());
+}
+
+const TEXT = {
+  mr: {
+    title: "सी.डी. रेशो", file: "ताळेबंद फाईल निवडा (.xlsx)", print: "प्रिंट", pdf: "PDF जतन करा", pdfTip: "उघडलेल्या खिडकीत Destination मध्ये \"Save as PDF\" निवडा",
+    noFile: "अजून फाईल निवडलेली नाही", fileLbl: "फाईल: ", dateLbl: "  |  ताळेबंद दिनांक: ",
+    keyBs: "ताळेबंदातून आपोआप घेतले", keyNeed: "रिकामे — तुम्ही भरायचे",
+    unitName: {lakh: "लाख", crore: "कोटी", rupee: "रुपये"},
+    unit: {lakh: "(रु. लाखात)", crore: "(रु. कोटीत)", rupee: "(रु. मध्ये)"}, no: "अ.क्र.", part: "तपशील", amt: "रक्कम",
+    missing: "सी.डी. रेशोसाठी ही माहिती भरा: ", readErr: "फाईल वाचता आली नाही: ",
+    profit: "नफा", div: "अंदाजित लाभांश", cap: "वसूल भाग भांडवल", divWord: "लाभांश", divPct: "लाभांश %",
+    bddr: "बुडीत व संशयित कर्ज निधी", req: "आवश्यक एनपीए तरतूद",
+    sbPl: "अ) नफा", sbCap: "ब) वसूल भाग भांडवल", sbPct: "क) लाभांश %", sbDiv: "ड) वजा: अंदाजित लाभांश (ब × क)",
+    sbBddr: "अ) बुडीत व संशयित कर्ज निधी", sbReq: "ब) वजा: आवश्यक एनपीए तरतूद",
+  },
+  en: {
+    title: "CD Ratio", file: "Choose balance sheet file (.xlsx)", print: "Print", pdf: "Save as PDF", pdfTip: "In the window that opens, choose \"Save as PDF\" as the Destination",
+    noFile: "No file chosen yet", fileLbl: "File: ", dateLbl: "  |  Balance sheet date: ",
+    keyBs: "Taken automatically from balance sheet", keyNeed: "Blank — you fill in",
+    unitName: {lakh: "Lakh", crore: "Crore", rupee: "Rupees"},
+    unit: {lakh: "(Rs. in lakhs)", crore: "(Rs. in crores)", rupee: "(Rs.)"}, no: "Sr. No.", part: "Particulars", amt: "Amount",
+    missing: "Enter these to get the CD ratio: ", readErr: "Could not read the file: ",
+    profit: "Profit", div: "Estimated dividend", cap: "Paid-up share capital", divWord: "Dividend", divPct: "Dividend %",
+    bddr: "Reserve for bad & doubtful debts", req: "Required NPA provision",
+    sbPl: "a) Profit", sbCap: "b) Paid-up share capital", sbPct: "c) Dividend %", sbDiv: "d) Less: Estimated dividend (b × c)",
+    sbBddr: "a) Reserve for bad &amp; doubtful debts", sbReq: "b) Less: Required NPA provision",
+  },
+};
+
+// Same rows as the Excel calculation sheet: [no (mr), no (en), Marathi, English, id, kind]
+// bs = from balance sheet, in = you fill (required), in0 = you fill (blank = 0), f = formula, t = total
+const ROWS = [
+  ["1", "1", "सरासरी कर्जे", "Average loans", "L1", "in"],
+  ["2 अ", "2 A", "1) वसूल भाग भांडवल", "1) Paid-up share capital", "a1", "bs"],
+  ["", "", "2) राखीव निधी", "2) Reserve fund", "a2", "bs"],
+  ["", "", "3) इमारत निधी", "3) Building fund", "a3", "bs"],
+  ["", "", "4) गुंतवणूक चढउतार निधी", "4) Investment fluctuation reserve", "a4", "bs"],
+  ["", "", "5) लाभांश समीकरण निधी", "5) Dividend equalisation fund", "a5", "bs"],
+  ["", "", "6) उत्तम जिंदगीवरील तरतूद", "6) Provision on standard assets", "a6", "bs"],
+  ["", "", "7) मागील वर्षाचा शिल्लक नफा", "7) Previous year's balance profit", "a7", "in0"],
+  ["", "", "8) चालू वर्षाच्या नफ्यातून अंदाजित लाभांश वजा जाता नफा", "8) Current year profit less estimated dividend", "a8", "f"],
+  ["", "", "9) ज्यादा केलेली एनपीए तरतूद", "9) Excess NPA provision", "a9", "f"],
+  ["", "", "एकूण 2 अ", "Total 2 A", "A", "t"],
+  ["2 ब", "2 B", "1) संचित तोटा", "1) Accumulated loss", "b1", "in0"],
+  ["", "", "2) चालू तोटा", "2) Current year loss", "b2", "in0"],
+  ["", "", "3) कमी केलेली एन.पी.ए. तरतूद", "3) Short NPA provision", "b3", "in0"],
+  ["", "", "4) कमी केलेली थकव्याज तरतूद", "4) Short overdue interest provision", "b4", "in0"],
+  ["", "", "5) कराव्या लागणाऱ्या मात्र न केलेल्या तरतुदी", "5) Provisions required but not made", "b5", "in0"],
+  ["", "", "एकूण 2 ब", "Total 2 B", "B", "t"],
+  ["2", "2", "स्वनिधी (2 अ - 2 ब)", "Own funds (2 A - 2 B)", "OF", "t"],
+  ["3", "3", "1) स्थावर जिंदगी व जंगम मालमत्ता", "1) Fixed assets (immovable & movable)", "c1", "bs"],
+  ["", "", "2) शेअर्स मधील गुंतवणूक", "2) Investment in shares", "c2", "bs"],
+  ["", "", "3) राखीव निधी", "3) Reserve fund", "c3", "f"],
+  ["", "", "एकूण 3", "Total 3", "C", "t"],
+  ["4", "4", "कर्जवाटपास स्वनिधी (2 - 3)", "Own funds available for lending (2 - 3)", "LF", "t"],
+  ["5", "5", "सरासरी ठेवी", "Average deposits", "L5", "in"],
+  ["6", "6", "सी.डी. रेशो % = {(1 - 4) / 5} x 100", "CD ratio % = {(1 - 4) / 5} x 100", "CD", "t"],
+];
+// Left column: rows 1 to Total 2A; right column: the rest
+const SPLIT = ROWS.findIndex(r => r[4] === "A") + 1;
+// Inputs that come from the balance sheet, and the ones you must fill
+const FROM_BS = ["a1", "cap", "a2", "a3", "a4", "a5", "a6", "c1", "c2", "pl", "bddr"];
+const REQUIRED = {
+  L1: {mr: "1) सरासरी कर्जे", en: "1) Average loans"},
+  L5: {mr: "5) सरासरी ठेवी", en: "5) Average deposits"},
+  divPct: {mr: "8) लाभांश %", en: "8) Dividend %"},
+  req: {mr: "9) आवश्यक एनपीए तरतूद", en: "9) Required NPA provision"},
+};
+
+let lang = "mr";
+try { if (localStorage.getItem("cdLang") === "en") lang = "en"; } catch (e) {}
+let fileInfo = null;   // {name, date}
+
+function build() {
+  // Keep what is already typed or loaded when the tables are redrawn
+  const keep = {};
+  document.querySelectorAll("tbody input.n").forEach(el => keep[el.id] = {value: el.value, raw: el.dataset.raw, bs: el.dataset.bs, title: el.title, manual: el.dataset.manual});
+  const T = TEXT[lang];
+  // Working for rows 8 and 9, shown as sub-rows right below them
+  const sub = {
+    a8: [[T.sbPl, "pl"], [T.sbCap, "cap"], [T.sbPct, "divPct"], [T.sbDiv, "div"]],
+    a9: [[T.sbBddr, "bddr"], [T.sbReq, "req"]],
+  };
+  const subRow = ([label, id]) =>
+    `<tr class="sb"><td class="no"></td><td class="lbl">${label}</td><td class="amt"><input class="n${id === "divPct" ? " pct" : ""}" id="${id}"></td></tr>`;
+  const row = ([noMr, noEn, mr, en, id, kind]) => {
+    const cls = id === "CD" ? "cdrow" : [kind === "t" ? "tot" : "", noMr ? "grp" : ""].join(" ");
+    const amt = (kind === "f" || kind === "t") ? `<span id="${id}"></span>` : `<input class="n" id="${id}">`;
+    return `<tr class="${cls}"><td class="no">${lang === "en" ? noEn : noMr}</td><td>${lang === "en" ? en : mr}</td><td class="amt">${amt}</td></tr>` +
+      (sub[id] ? sub[id].map(subRow).join("") : "");
+  };
+  $("tbL").innerHTML = ROWS.slice(0, SPLIT).map(row).join("");
+  $("tbR").innerHTML = ROWS.slice(SPLIT).map(row).join("");
+  document.querySelectorAll("tbody input.n").forEach(el => {
+    const k = keep[el.id];
+    if (k) { el.value = k.value; el.dataset.raw = k.raw || ""; el.dataset.bs = k.bs || ""; el.title = k.title; el.dataset.manual = k.manual || ""; }
+    if (el.id === "req") el.title = "Total Loan Balance From Branchwise NPA report";
+    if (el.id === "L1") el.title = "Average loans = Total Loans / No of Months";
+    if (el.id === "L5") el.title = "Average deposits = Total Deposit / No of Months";
+    if (el.id === "divPct") el.title = "(= Paid-up share capital × Dividend %)";
+    if (el.id === "div") el.title = "(= Paid-up share capital × Dividend %)\nYou can type your own amount here; changing share capital or Dividend % recalculates it.";
+    el.addEventListener("input", () => {
+      if (el.id !== "divPct") el.dataset.raw = isNaN(parseAmt(el.value)) ? "" : parseAmt(el.value) * U();
+      // Typing in the dividend box overrides the calculation; changing capital or % goes back to calculating
+      if (el.id === "div") el.dataset.manual = el.value === "" ? "" : "1";
+      if (el.id === "cap" || el.id === "divPct") $("div").dataset.manual = "";
+      paint(); calc();
+    });
+    // Commas are added once you leave the box, so they don't get in the way while typing
+    if (el.id !== "divPct") el.addEventListener("blur", () => { if (el.dataset.raw !== "") el.value = fmt(Number(el.dataset.raw) / U()); });
+  });
+}
+
+function setLang(l) {
+  lang = l;
+  try { localStorage.setItem("cdLang", l); } catch (e) {}
+  const T = TEXT[l];
+  document.documentElement.lang = l;
+  document.title = T.title;
+  $("tTitle").textContent = T.title;
+  $("tFile").textContent = T.file; $("tPrint").textContent = T.print; $("tPdf").textContent = T.pdf; $("tPdf").title = T.pdfTip;
+  $("tKeyBs").textContent = T.keyBs; $("tKeyNeed").textContent = T.keyNeed; $("tUnit").textContent = T.unit[unitKey];
+  [...$("unit").options].forEach(o => o.textContent = T.unitName[o.value]);
+  document.querySelectorAll(".thNo").forEach(e => e.textContent = T.no);
+  document.querySelectorAll(".thPart").forEach(e => e.textContent = T.part);
+  document.querySelectorAll(".thAmt").forEach(e => e.textContent = T.amt);
+  $("info").textContent = fileInfo ? T.fileLbl + fileInfo.name + (fileInfo.date ? T.dateLbl + fileInfo.date : "") : T.noFile;
+  $("lang_mr").className = l === "mr" ? "on" : "";
+  $("lang_en").className = l === "en" ? "on" : "";
+  build(); paint(); calc();
+}
+
+function setUnit(k) {
+  unitKey = k;
+  $("unit").value = k;
+  $("tUnit").textContent = TEXT[lang].unit[k];
+  document.querySelectorAll("tbody input.n").forEach(el => {
+    if (el.id !== "divPct" && el.dataset.raw) el.value = fmt(Number(el.dataset.raw) / U());
+  });
+  calc();
+}
+
+function paint() {
+  document.querySelectorAll("input.n").forEach(el => {
+    // Balance-sheet boxes are green from the start; they turn yellow only if a loaded file didn't contain them
+    const fromBs = FROM_BS.includes(el.id) && (!fileInfo || el.dataset.bs === "1");
+    // The estimated dividend is worked out for you, so it is never shown as "you fill"
+    const need = el.value === "" && el.id !== "div";
+    el.className = "n " + (fromBs ? "bs" : need ? "need" : "") + (el.id === "divPct" ? " pct" : "");
+  });
+}
+
+function calc() {
+  // Works in rupees. Blank required boxes leave the result empty; other blank boxes count as 0
+  const v = id => {
+    const el = $(id);
+    const n = id === "divPct" ? parseFloat(el.value) : (el.dataset.raw ? Number(el.dataset.raw) : NaN);
+    if (isNaN(n)) return (REQUIRED[id] || FROM_BS.includes(id)) ? NaN : 0;
+    return n;
+  };
+  const out = (id, n) => { $(id).textContent = fmt(n / U()); return n; };
+
+  let div;
+  if ($("div").dataset.manual) div = v("div");
+  else {
+    div = v("cap") * v("divPct") / 100;
+    setRaw($("div"), div);
+  }
+  const a8 = out("a8", v("pl") - div);
+  const a9 = out("a9", v("bddr") - v("req"));
+  const A  = out("A", v("a1") + v("a2") + v("a3") + v("a4") + v("a5") + v("a6") + v("a7") + a8 + a9);
+  const B  = out("B", v("b1") + v("b2") + v("b3") + v("b4") + v("b5"));
+  const OF = out("OF", A - B);
+  const c3 = out("c3", v("a2"));
+  const C  = out("C", v("c1") + v("c2") + c3);
+  const LF = out("LF", OF - C);
+  const loans = v("L1"), deps = v("L5");
+  const cd = (loans - LF) * 100 / deps;
+  $("CD").textContent = isFinite(cd) ? f2(cd) + " %" : "—";
+
+  paint();   // the dividend box may have just been filled in
+}
+
+// ---------- Reading the balance sheet .xlsx (works offline) ----------
+async function unzip(buf) {
+  const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--)
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error("not an .xlsx file");
+  const count = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  const files = {};
+  for (let n = 0; n < count; n++) {
+    const method = dv.getUint16(p + 10, true), size = dv.getUint32(p + 20, true);
+    const nameLen = dv.getUint16(p + 28, true), extraLen = dv.getUint16(p + 30, true), commLen = dv.getUint16(p + 32, true);
+    const local = dv.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(buf.subarray(p + 46, p + 46 + nameLen));
+    const start = local + 30 + dv.getUint16(local + 26, true) + dv.getUint16(local + 28, true);
+    files[name] = {method, data: buf.subarray(start, start + size)};
+    p += 46 + nameLen + extraLen + commLen;
+  }
+  return async name => {
+    const f = files[name];
+    if (!f) return null;
+    if (f.method === 0) return new TextDecoder().decode(f.data);
+    const stream = new Blob([f.data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return await new Response(stream).text();
+  };
+}
+const xml = s => new DOMParser().parseFromString(s, "application/xml");
+const tags = (node, t) => [...node.getElementsByTagNameNS("*", t)];
+const colIdx = ref => { let n = 0; for (const ch of ref.replace(/\d+/g, "")) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+
+async function readXlsx(buf) {
+  const get = await unzip(buf);
+  const wb = xml(await get("xl/workbook.xml"));
+  const rels = xml(await get("xl/_rels/workbook.xml.rels"));
+  const first = tags(wb, "sheet")[0];
+  const rid = first.getAttribute("r:id") || first.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+  let target = tags(rels, "Relationship").find(r => r.getAttribute("Id") === rid).getAttribute("Target");
+  target = target.startsWith("/") ? target.slice(1) : "xl/" + target;
+  const ssText = await get("xl/sharedStrings.xml");
+  const shared = ssText ? tags(xml(ssText), "si").map(si => tags(si, "t").map(t => t.textContent).join("")) : [];
+  const sheet = xml(await get(target));
+  const aoa = [];
+  for (const c of tags(sheet, "c")) {
+    const ref = c.getAttribute("r"), type = c.getAttribute("t");
+    const r = parseInt(ref.replace(/[A-Z]+/g, ""), 10) - 1, col = colIdx(ref);
+    const v = tags(c, "v")[0];
+    let value = null;
+    if (type === "s") value = v ? shared[+v.textContent] : null;
+    else if (type === "inlineStr") value = tags(c, "t").map(t => t.textContent).join("");
+    else if (type === "str" || type === "e") value = v ? v.textContent : null;
+    else if (v) value = Number(v.textContent);
+    if (value === null || value === "") continue;
+    (aoa[r] = aoa[r] || [])[col] = value;
+  }
+  return aoa;
+}
+
+// Each text cell is a balance-sheet line; its amount is the next filled cell to its right on the same side.
+// Lines with no amount are group headings (e.g. "FIXED ASSETS").
+function parseBalanceSheet(aoa) {
+  let split = 11;
+  outer: for (let r = 0; r < Math.min(aoa.length, 60); r++) {
+    const row = aoa[r] || [];
+    for (let c = 1; c < row.length; c++)
+      if (typeof row[c] === "string" && /^\s*assets\s*$/i.test(row[c])) { split = c; break outer; }
+  }
+  const items = [];
+  let date = "";
+  aoa.forEach((row, r) => {
+    if (!row) return;
+    for (const [s, e, side] of [[0, split, "L"], [split, row.length, "A"]]) {
+      for (let c = s; c < e; c++) {
+        const t = row[c];
+        if (typeof t !== "string" || !t.trim() || toNum(t) !== null) continue;
+        const m = t.match(/as\s+on\s*:?\s*([\d\/\-.]+)/i);
+        if (m) date = m[1];
+        let value = null;
+        for (let k = c + 1; k < e; k++) {
+          if (row[k] == null || row[k] === "") continue;
+          value = toNum(row[k]);
+          break;
+        }
+        items.push({side, label: t.trim(), key: key(t), value, row: r + 1});
+      }
+    }
+  });
+  const cur = {L: "", A: ""};
+  for (const it of items) {
+    if (it.value === null) cur[it.side] = it.key;
+    else it.section = cur[it.side];
+  }
+  return {items, date};
+}
+
+async function load(buf, name) {
+  const {items, date} = parseBalanceSheet(await readXlsx(buf));
+  const one = (side, test) => items.find(i => i.side === side && i.value !== null && test(i.key));
+  const group = (side, sec) => items.filter(i => i.side === side && i.value !== null && i.section === sec);
+  const fill = (id, list) => {
+    const el = $(id);
+    list = list.filter(Boolean);
+    if (list.length) {
+      setRaw(el, list.reduce((s, i) => s + i.value, 0));
+      el.dataset.bs = "1";
+      el.title = "Taken from balance sheet:\n" + list.map(i => `${i.label}  = Rs ${i.value.toFixed(2)}`).join("\n+ ");
+    } else {
+      setRaw(el, null); el.dataset.bs = ""; el.title = "Not found in balance sheet - please enter";
+    }
+  };
+  fill("a1", [one("L", k => k === "paidupsharecapital")]);
+  fill("cap", [one("L", k => k === "paidupsharecapital")]);
+  $("div").dataset.manual = "";
+  fill("a2", [one("L", k => k === "reservefund")]);
+  fill("a3", [one("L", k => k === "buildingfund")]);
+  fill("a4", [one("L", k => k === "investmentfluctuationreserve")]);
+  fill("a5", [one("L", k => k.startsWith("dividendequ"))]);
+  fill("a6", [one("L", k => k === "reserveforstandardassets")]);
+  fill("bddr", [one("L", k => k === "reserveforbad&doubtfuldebts")]);
+  fill("c1", group("A", "fixedassets"));
+  // Same items as the existing calculation: Unity SFB shares + warrants, and PDI bonds
+  fill("c2", group("A", "shares&others").filter(i => /unity|pdi/i.test(i.label)));
+  // Profit = P&L on liabilities side minus P&L on assets side
+  const plL = one("L", k => k === "profit&lossac"), plA = one("A", k => k === "profit&lossac");
+  fill("pl", plL ? [plL] : []);
+  if (plL && plA) {
+    setRaw($("pl"), plL.value - plA.value);
+    $("pl").title = "Taken from balance sheet:\n" +
+      `${plL.label} - Liabilities side  = Rs ${plL.value.toFixed(2)}\n` +
+      `- ${plA.label} - Assets side  = Rs ${plA.value.toFixed(2)}`;
+  }
+  fileInfo = {name, date};
+  const T = TEXT[lang];
+  $("info").textContent = T.fileLbl + name + (date ? T.dateLbl + date : "");
+  paint(); calc();
+}
+
+$("file").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const rd = new FileReader();
+  rd.onload = ev => load(new Uint8Array(ev.target.result), f.name).catch(err => alert(TEXT[lang].readErr + err.message));
+  rd.readAsArrayBuffer(f);
+});
+
+// Opens the print window; choosing "Save as PDF" there saves the file under this name
+function savePdf() {
+  const old = document.title;
+  document.title = "CD_Ratio" + (fileInfo && fileInfo.date ? "_" + fileInfo.date.replace(/[\/.]/g, "-") : "");
+  window.print();
+  document.title = old;
+}
+
+setLang(lang);
+</script>
+</body>
+</html>

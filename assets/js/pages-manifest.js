@@ -34,6 +34,13 @@
         "desc":  "Cash count by note & coin, tally vs book balance"
     },
     {
+        "file":  "cd ratio.html",
+        "title":  "CD Ratio",
+        "name":  "CD Ratio",
+        "icon":  "⚖️",
+        "desc":  "Credit-deposit ratio from the balance sheet"
+    },
+    {
         "file":  "date.html",
         "title":  "Banking Date & Duration Calculator",
         "name":  "Date Calculator",
