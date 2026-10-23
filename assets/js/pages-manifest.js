@@ -27,6 +27,13 @@
         "desc":  "Arbitration recovery D1 prastav"
     },
     {
+        "file":  "balance sheet.html",
+        "title":  "Balance Sheet",
+        "name":  "Balance Sheet",
+        "icon":  "📊",
+        "desc":  "Compare a branch balance sheet on two dates"
+    },
+    {
         "file":  "cash denomination.html",
         "title":  "Cash Denomination — Count & Tally",
         "name":  "Cash Denomination",
