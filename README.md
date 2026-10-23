@@ -18,7 +18,7 @@ Loan Charges needs internet the first time, to load schemes from Supabase; after
 | `assets/js/calculators/*-engine.js` | Calculation logic of each tool, separate from the page so it can be tested |
 | `assets/css/banking-theme.css` | Shared look for all tool pages |
 | `tools/*.html` | One page per calculator |
-| `assets/js/branch/`, `assets/css/branch_bs.css` | Balance Sheet (`tools/balance sheet.html`): own dark look and English/Marathi text, does not use `banking-theme.css` |
+| `assets/js/branch/`, `assets/css/branch_bs.css` | Balance Sheet (`tools/balance sheet.html`): English/Marathi; its own stylesheet copies the `banking-theme.css` look (dark theme in its Settings) |
 | `supabase/migrations/` | Loan Charges database changes (admin access) |
 | `tests/` | Tests for the engines |
 
