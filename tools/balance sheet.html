@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Balance Sheet</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="../assets/css/branch_bs.css?v=17" />
+  <script src="../assets/js/xlsx.full.min.js"></script>
+  <script src="../assets/js/branch/bs_i18n.js?v=11"></script>
+  <script src="../assets/js/branch/bs_parser.js?v=10"></script>
+  <script src="../assets/js/branch/bs_analysis.js?v=10"></script>
+  <script src="../assets/js/branch/bs_charts.js?v=10"></script>
+</head>
+<body>
+  <div id="tooltip" role="tooltip"></div>
+
+  <div id="app" class="container">
+    <!-- Top bar -->
+    <header class="top-bar glass">
+      <div class="brand">
+        <div class="brand-text">
+          <div class="brand-title" id="brand-title" data-i18n="app.title">Balance Sheet</div>
+          <div class="branch-id" id="branch-id" hidden>
+            <div class="branch-line"><span class="branch-name" id="branch-name"></span><span class="code-chip" id="branch-code"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="period-range" id="period-range" hidden>
+        <div class="period pa"><i></i><b id="period-a"></b><span id="period-a-fy"></span></div>
+        <div class="period-gap"><span id="period-gap"></span></div>
+        <div class="period pb"><i></i><b id="period-b"></b><span id="period-b-fy"></span></div>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-primary" id="btn-print" disabled>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          <span data-i18n="btn.print">Print Report</span>
+        </button>
+        <button class="btn btn-ghost btn-danger" id="btn-clear" disabled data-i18n-title="btn.clearTip">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          <span data-i18n="btn.clear">Clear</span>
+        </button>
+        <div class="settings-wrap">
+          <button class="btn btn-ghost" id="btn-settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-panel" data-i18n-title="btn.settings">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+          <div class="settings-panel" id="settings-panel" role="dialog" hidden>
+            <div>
+              <span class="settings-label" data-i18n="set.lang">Language</span>
+              <div class="segmented" data-setting="lang" role="group">
+                <button type="button" data-value="en">English</button>
+                <button type="button" data-value="mr">मराठी</button>
+              </div>
+            </div>
+            <div>
+              <span class="settings-label" data-i18n="set.theme">Theme</span>
+              <div class="segmented" data-setting="theme">
+                <button type="button" data-value="dark" data-i18n="set.dark">🌙 Dark</button>
+                <button type="button" data-value="light" data-i18n="set.light">☀️ Light</button>
+              </div>
+            </div>
+            <div>
+              <span class="settings-label" data-i18n="set.units">Amount Format</span>
+              <div class="segmented" data-setting="units">
+                <button type="button" data-value="crore" data-i18n="units.crore">Crore</button>
+                <button type="button" data-value="lakh" data-i18n="units.lakh">Lakh</button>
+                <button type="button" data-value="exact" data-i18n="units.exact">Exact ₹</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Upload slots -->
+    <section class="upload-row" id="upload-row">
+      <div class="slot slot-a glass" id="slot-1" tabindex="0" role="button">
+        <div class="slot-badge">A</div>
+        <div class="slot-body">
+          <div class="slot-title" id="slot-1-title"></div>
+          <div class="slot-desc" id="slot-1-desc"></div>
+          <div class="slot-meta" id="slot-1-meta"></div>
+        </div>
+        <button class="slot-remove" id="slot-1-remove" data-i18n-title="slot.remove" hidden>✕</button>
+        <input type="file" id="file-1" accept=".xlsx,.xls" />
+      </div>
+      <div class="slot slot-b glass" id="slot-2" tabindex="0" role="button">
+        <div class="slot-badge">B</div>
+        <div class="slot-body">
+          <div class="slot-title" id="slot-2-title"></div>
+          <div class="slot-desc" id="slot-2-desc"></div>
+          <div class="slot-meta" id="slot-2-meta"></div>
+        </div>
+        <button class="slot-remove" id="slot-2-remove" data-i18n-title="slot.remove" hidden>✕</button>
+        <input type="file" id="file-2" accept=".xlsx,.xls" />
+      </div>
+    </section>
+
+    <div id="alert" class="alert" hidden></div>
+
+    <!-- Empty state -->
+    <section id="empty" class="hero glass">
+      <h2 data-i18n="hero.title"></h2>
+      <p data-i18n="hero.text"></p>
+    </section>
+
+    <!-- Dashboard -->
+    <main id="dash" hidden>
+      <nav class="tabs glass" id="tabs">
+        <button class="tab active" data-view="v-overview" data-i18n="tab.overview"></button>
+        <button class="tab" data-view="v-deposits" data-i18n="tab.deposits"></button>
+        <button class="tab" data-view="v-loans" data-i18n="tab.loans"></button>
+        <button class="tab" data-view="v-liquidity" data-i18n="tab.liquidity"></button>
+        <button class="tab" data-view="v-sources" data-i18n="tab.sources"></button>
+        <button class="tab" data-view="v-uses" data-i18n="tab.uses"></button>
+        <button class="tab" data-view="v-variations" data-i18n="tab.variations"></button>
+        <button class="tab" data-view="v-lines" data-i18n="tab.lines"></button>
+        <button class="tab" data-view="v-income" id="tab-income" data-i18n="tab.income" hidden></button>
+        <button class="tab" data-view="v-audit" data-i18n="tab.audit"></button>
+      </nav>
+
+      <!-- Overview -->
+      <section class="view active" id="v-overview">
+        <div class="kpi-grid" id="kpi-overview"></div>
+        <div class="panel glass">
+          <div class="panel-head"><h3 class="panel-title" data-i18n="ov.heads.title"></h3></div>
+          <div class="table-wrap" id="tbl-heads"></div>
+        </div>
+      </section>
+
+      <!-- Deposits -->
+      <section class="view" id="v-deposits">
+        <div class="kpi-grid" id="kpi-deposits"></div>
+        <div class="grid-2">
+          <div class="panel glass">
+            <div class="panel-head"><h3 class="panel-title" data-i18n="dep.bars.title"></h3></div>
+            <div class="chart" id="ch-dep-bars"></div>
+          </div>
+          <div class="panel glass">
+            <div class="panel-head">
+              <h3 class="panel-title" data-i18n="dep.mix.title"></h3>
+              <div class="segmented" id="dep-donut-period">
+                <button type="button" data-value="A" data-i18n="period.a"></button>
+                <button type="button" data-value="B" class="active" data-i18n="period.b"></button>
+              </div>
+            </div>
+            <div class="chart" id="ch-dep-donut"></div>
+          </div>
+        </div>
+        <div class="panel glass gap-top">
+          <div class="panel-head"><h3 class="panel-title" data-i18n="dep.tbl.title"></h3></div>
+          <div class="table-wrap" id="tbl-deposits"></div>
+        </div>
+      </section>
+
+      <!-- Loans -->
+      <section class="view" id="v-loans">
+        <div class="kpi-grid" id="kpi-loans"></div>
+        <div class="grid-2">
+          <div class="panel glass">
+            <div class="panel-head"><h3 class="panel-title" data-i18n="loan.bars.title"></h3></div>
+            <div class="chart" id="ch-loan-bars"></div>
+          </div>
+          <div class="panel glass">
+            <div class="panel-head">
+              <h3 class="panel-title" data-i18n="loan.mix.title"></h3>
+              <div class="segmented" id="loan-donut-period">
+                <button type="button" data-value="A" data-i18n="period.a"></button>
+                <button type="button" data-value="B" class="active" data-i18n="period.b"></button>
+              </div>
+            </div>
+            <div class="chart" id="ch-loan-donut"></div>
+          </div>
+        </div>
+        <div class="panel glass gap-top">
+          <div class="panel-head"><h3 class="panel-title" data-i18n="loan.tbl.title"></h3></div>
+          <div class="table-wrap" id="tbl-loans"></div>
+        </div>
+      </section>
+
+      <!-- Cash & funds -->
+      <section class="view" id="v-liquidity">
+        <div class="kpi-grid" id="kpi-liquidity"></div>
+        <div class="grid-2">
+          <div class="panel glass">
+            <div class="panel-head"><h3 class="panel-title" data-i18n="liq.deploy.title"></h3></div>
+            <div class="chart" id="ch-deploy"></div>
+          </div>
+          <div class="panel glass">
+            <div class="panel-head"><h3 class="panel-title" data-i18n="liq.cash.title"></h3></div>
+            <div class="table-wrap" id="tbl-liquid"></div>
+          </div>
+        </div>
+        <div class="panel glass gap-top">
+          <div class="panel-head"><h3 class="panel-title" data-i18n="liq.other.title"></h3></div>
+          <div class="table-wrap" id="tbl-other"></div>
+        </div>
+      </section>
+
+      <!-- Sources of funds -->
+      <section class="view" id="v-sources">
+        <div class="grid-funds">
+          <div class="panel glass">
+            <div class="panel-head"><h3 class="panel-title" data-i18n="ov.liab.title"></h3></div>
+            <div class="chart" id="ch-liab-mix"></div>
+          </div>
+          <div class="panel glass">
+            <div class="panel-head"><h3 class="panel-title" data-i18n="funds.heads"></h3></div>
+            <div class="table-wrap" id="tbl-sources"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Use of funds -->
+      <section class="view" id="v-uses">
+        <div class="grid-funds">
+          <div class="panel glass">
+            <div class="panel-head"><h3 class="panel-title" data-i18n="ov.asset.title"></h3></div>
+            <div class="chart" id="ch-asset-mix"></div>
+          </div>
+          <div class="panel glass">
+            <div class="panel-head"><h3 class="panel-title" data-i18n="funds.heads"></h3></div>
+            <div class="table-wrap" id="tbl-uses"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Big changes -->
+      <section class="view" id="v-variations">
+        <div class="panel glass">
+          <div class="panel-head">
+            <h3 class="panel-title" data-i18n="var.title"></h3>
+            <div class="panel-tools">
+              <label class="field"><span data-i18n="var.pct"></span> <input type="number" class="input input-num" id="var-pct" min="0" step="1" value="20" /> %</label>
+              <label class="field"><span data-i18n="var.amt"></span> <input type="number" class="input input-num" id="var-amt" min="0" step="0.5" value="1" /> <span data-i18n="var.lakh"></span></label>
+            </div>
+          </div>
+          <div class="table-wrap" id="tbl-variations"></div>
+        </div>
+        <div class="panel glass">
+          <div class="panel-head"><h3 class="panel-title" data-i18n="var.movers.title"></h3></div>
+          <div class="chart" id="ch-movers"></div>
+        </div>
+      </section>
+
+      <!-- All heads -->
+      <section class="view" id="v-lines">
+        <div class="panel glass">
+          <div class="panel-head">
+            <h3 class="panel-title" data-i18n="lines.title"></h3>
+            <div class="panel-tools">
+              <input type="search" class="input" id="line-search" data-i18n-ph="lines.search" />
+              <select class="select" id="line-side">
+                <option value="" data-i18n="lines.bothSides"></option>
+                <option value="L" data-i18n="sides.L"></option>
+                <option value="A" data-i18n="sides.A"></option>
+              </select>
+              <select class="select" id="line-cat"></select>
+              <select class="select" id="line-status">
+                <option value="" data-i18n="lines.anyChange"></option>
+                <option value="up" data-i18n="status.up"></option>
+                <option value="down" data-i18n="status.down"></option>
+                <option value="new" data-i18n="status.new"></option>
+                <option value="closed" data-i18n="status.closed"></option>
+                <option value="flat" data-i18n="status.flat"></option>
+              </select>
+              <button class="btn btn-sm" id="btn-line-csv" data-i18n="btn.csv"></button>
+            </div>
+          </div>
+          <div class="table-wrap tall" id="tbl-lines"></div>
+        </div>
+      </section>
+
+      <!-- Income & expenses (only when the workbook contains one) -->
+      <section class="view" id="v-income">
+        <div class="kpi-grid" id="kpi-income"></div>
+        <div class="panel glass">
+          <div class="panel-head"><h3 class="panel-title" data-i18n="inc.title"></h3></div>
+          <div class="table-wrap" id="tbl-income"></div>
+        </div>
+      </section>
+
+      <!-- Audit & overview -->
+      <section class="view" id="v-audit">
+        <div class="panel glass audit">
+          <div class="table-wrap no-cap" id="tbl-audit"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="print-report"></div>
+
+  <script src="../assets/js/branch/bs_app.js?v=12"></script>
+</body>
+</html>
