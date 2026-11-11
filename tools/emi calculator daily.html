@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMI Calculator Daily</title>
+    <meta name="tool-name" content="EMI Calculator Daily">
+    <meta name="tool-icon" content="⚡">
+    <meta name="tool-desc" content="Daily reducing balance repayment vs monthly EMI">
+    
+    <link rel="stylesheet" href="../assets/css/banking-theme.css">
+    <script src="../assets/js/banking-core.js"></script>
+    <script src="../assets/js/calculators/emi-daily-engine.js"></script>
+
+    <style>
+        body {
+            padding: 0 6px 16px;
+            margin: 0;
+            background: var(--bg-app);
+            min-height: 100vh;
+            color: var(--text-primary);
+            font-family: var(--font-family);
+        }
+
+        /* Maximize usable horizontal canvas by reducing side margins */
+        .app-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 4px !important;
+            margin: 0 auto !important;
+            box-sizing: border-box;
+        }
+
+        /* Dedicated Asymmetrical Hero Layout Grid:
+           ~45% for unified single-card Loan Parameters and ~55% for spacious Repayment Summary */
+        .hero-layout-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+            gap: 16px;
+            align-items: stretch;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 1040px) {
+            .hero-layout-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card Header Flex with Anti-wrapping protection */
+        .card-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-wrap: wrap;
+        }
+
+        /* Dedicated Strictly Single-Line Header for Loan Parameters */
+        .card-header-flex.param-card-header {
+            flex-wrap: nowrap !important;
+            white-space: nowrap !important;
+            gap: 8px !important;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .card-header-flex.param-card-header::-webkit-scrollbar {
+            display: none;
+        }
+
+        .param-card-header .card-title-main {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            flex-shrink: 0 !important;
+            white-space: nowrap !important;
+            font-size: 0.90rem !important;
+        }
+
+        .param-card-header .card-title-main span:first-child {
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+        }
+
+        .param-card-header .badge-nowrap {
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            padding: 2px 7px !important;
+            font-size: 0.68rem !important;
+        }
+
+        .param-card-header .header-actions {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            flex-shrink: 0 !important;
+            white-space: nowrap !important;
+        }
+
+        .param-card-header .header-action-btn {
+            padding: 3px 8px !important;
+            font-size: 0.72rem !important;
+            line-height: 1.25 !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 3px !important;
+            border-radius: 4px !important;
+        }
+
+        .card-title-main {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--bank-navy);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+        }
+
+        /* Anti-wrap on Reducing Balance badge */
+        .badge-nowrap {
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+        }
+
+        /* Seamless Parameter Form Groups inside the single Loan Parameters Card */
+        .param-group {
+            margin-bottom: 11px;
+        }
+
+        .param-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .param-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .param-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--bank-blue);
+            background: var(--bank-blue-subtle);
+            border: 1px solid #bfdbfe;
+            padding: 1px 8px;
+            border-radius: var(--radius-full);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 250px;
+        }
+
+        /* View Formula Button & Collapsible Breakdown Box */
+        .btn-formula-toggle {
+            padding: 2px 7px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--bank-blue);
+            background: #ffffff;
+            border: 1px solid rgba(37, 99, 235, 0.35);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            line-height: 1.3;
+        }
+
+        .btn-formula-toggle:hover {
+            background: var(--bank-blue);
+            color: #ffffff;
+            border-color: var(--bank-blue);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(37, 99, 235, 0.2);
+        }
+
+        .formula-breakdown-box {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-left: 3.5px solid var(--bank-blue);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            margin: 8px 0 10px 0;
+            font-size: 0.74rem;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .formula-box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            color: var(--bank-navy);
+            margin-bottom: 6px;
+            font-size: 0.74rem;
+        }
+
+        .formula-box-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 0 4px;
+            line-height: 1;
+        }
+
+        .formula-box-close:hover {
+            color: var(--bank-navy);
+        }
+
+        .formula-math-line {
+            background: #ffffff;
+            border: 1px dashed #cbd5e1;
+            border-radius: 4px;
+            padding: 4px 8px;
+            margin-bottom: 6px;
+            font-family: var(--font-mono, monospace);
+            font-size: 0.72rem;
+            color: var(--bank-navy);
+        }
+
+        .formula-step-line {
+            line-height: 1.55;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            font-size: 0.73rem;
+        }
+
+        .formula-note {
+            font-size: 0.69rem;
+            color: var(--text-secondary);
+            border-top: 1px solid #e2e8f0;
+            padding-top: 6px;
+            line-height: 1.4;
+        }
+
+        /* Comfortable Currency Input Field */
+        .param-input-box {
+            display: flex;
+            align-items: center;
+            background: #ffffff;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-sm);
+            padding: 1px 8px;
+            transition: all 0.2s ease;
+        }
+
+        .param-input-box:focus-within {
+            background: #ffffff;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .param-input-symbol {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            padding: 0 5px;
+            user-select: none;
+        }
+
+        .param-input-field {
+            flex: 1;
+            min-width: 0;
+            border: none !important;
+            background: transparent !important;
+            outline: none !important;
+            box-shadow: none !important;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--bank-navy);
+            font-family: inherit;
+            padding: 5px 3px;
+        }
+
+        .param-input-suffix {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0 6px;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        /* Numeric Stepper Box */
+        .param-stepper-box {
+            display: flex;
+            align-items: center;
+            background: #ffffff;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .param-stepper-box:focus-within {
+            background: #ffffff;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .param-stepper-btn {
+            width: 30px;
+            height: 32px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, color 0.15s;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        .param-stepper-btn:hover {
+            background: var(--bg-muted);
+            color: var(--bank-navy);
+        }
+
+        .param-stepper-input {
+            flex: 1;
+            min-width: 0;
+            border: none !important;
+            background: transparent !important;
+            outline: none !important;
+            box-shadow: none !important;
+            text-align: center;
+            font-size: 0.98rem;
+            font-weight: 800;
+            color: var(--bank-navy);
+            font-family: inherit;
+            padding: 4px 2px;
+        }
+
+        /* Modern Range Slider with Dynamic Filled Track */
+        .param-slider-wrap {
+            margin: 6px 0 3px;
+        }
+
+        .param-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 5px;
+            border-radius: 999px;
+            background: var(--bg-muted);
+            outline: none;
+            cursor: pointer;
+            transition: background 0.12s ease;
+        }
+
+        .param-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--bank-blue);
+            border: 2px solid #ffffff;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.25);
+            cursor: pointer;
+            transition: transform 0.12s ease, background-color 0.12s ease;
+        }
+
+        .param-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: var(--bank-navy);
+        }
+
+        .param-slider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--bank-blue);
+            border: 2px solid #ffffff;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.25);
+            cursor: pointer;
+        }
+
+        /* Preset Chips — Comfortable Width & Active Glow */
+        .param-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .param-chip {
+            flex: 1 1 0;
+            min-width: 42px;
+            padding: 3px 5px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            font-family: inherit;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xs);
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .param-chip:hover {
+            background: var(--bank-navy);
+            border-color: var(--bank-navy);
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-xs);
+        }
+
+        .param-chip.active {
+            background: var(--bank-blue);
+            border-color: var(--bank-blue);
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+        }
+
+        /* Alert banner */
+        .alert-banner {
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            border: 1px solid transparent;
+            line-height: 1.4;
+        }
+
+        .alert-warning {
+            background: var(--status-warning-bg);
+            border-color: var(--status-warning-border);
+            color: var(--warn-text);
+        }
+
+        .alert-danger {
+            background: var(--status-danger-bg);
+            border-color: var(--status-danger-border);
+            color: var(--danger-text);
+        }
+
+        .alert-success {
+            background: var(--status-success-bg);
+            border-color: var(--status-success-border);
+            color: var(--status-success);
+        }
+
+        .alert-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+            color: #ffffff;
+        }
+
+        .alert-warning .alert-icon { background: var(--bank-gold); }
+        .alert-danger .alert-icon { background: var(--status-danger); }
+        .alert-success .alert-icon { background: var(--status-success); }
+
+        /* Payment breakdown container */
+        .breakdown-box {
+            background: #FFFFFF;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
+        }
+
+        .breakdown-donut-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .donut-wrap {
+            position: relative;
+            width: 104px;
+            height: 104px;
+            flex-shrink: 0;
+        }
+
+        .donut-wrap svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .donut-center-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .donut-center-val {
+            font-size: 0.95rem;
+            font-weight: 850;
+            color: var(--bank-navy);
+            line-height: 1.1;
+        }
+
+        .donut-center-lbl {
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        .breakdown-cards-col {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .breakdown-card {
+            background: #f8fafc;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 9px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .breakdown-card:hover {
+            background: #ffffff;
+            border-color: var(--border-default);
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+        }
+
+        .breakdown-card.prin { border-left: 4px solid var(--bank-blue); }
+        .breakdown-card.int { border-left: 4px solid var(--bank-gold); }
+
+        .progress-bar-wrap {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-muted);
+            border-radius: 999px;
+            overflow: hidden;
+            display: flex;
+            margin-top: 12px;
+        }
+
+        .progress-bar-prin {
+            background: var(--bank-blue);
+            transition: width 0.3s ease;
+        }
+
+        .progress-bar-int {
+            background: var(--bank-gold);
+            transition: width 0.3s ease;
+        }
+
+        .ratios-strip {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-subtle);
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+        }
+
+
+        /* High-Visibility Segment View Switcher */
+        .pill-switcher {
+            display: inline-flex;
+            background: #E2E8F0;
+            border: 1.5px solid #CBD5E1;
+            border-radius: 8px;
+            padding: 3px;
+            gap: 4px;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+
+        .pill-btn {
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #334155;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pill-btn:hover:not(.active) {
+            color: #0F172A;
+            background: rgba(255, 255, 255, 0.75);
+        }
+
+        .pill-btn.active {
+            background: var(--bank-navy, #0F172A) !important;
+            color: #FFFFFF !important;
+            font-weight: 800;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+        }
+
+        /* Highlighted rows */
+        .row-payoff {
+            background: var(--status-success-bg) !important;
+            font-weight: 700;
+        }
+
+        .row-tenure {
+            background: var(--status-warning-bg) !important;
+            font-weight: 600;
+        }
+
+        /* Print styles */
+        .print-loan-meta {
+            display: none;
+        }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 10mm 12mm;
+            }
+            body {
+                padding: 0 !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-size: 8.5pt !important;
+            }
+            .no-print, .input-section, .btn, .header-actions {
+                display: none !important;
+            }
+            .print-only-header {
+                display: block !important;
+                border-bottom: 2px solid #000000 !important;
+                padding-bottom: 6px;
+                margin-bottom: 10px;
+                text-align: center;
+            }
+            .print-only-header h2 {
+                font-size: 13pt;
+                font-weight: 850;
+                margin: 0;
+                color: #000000 !important;
+            }
+            .print-only-header p {
+                font-size: 8pt;
+                color: #444444 !important;
+                margin: 2px 0 0;
+            }
+            .print-loan-meta {
+                display: block !important;
+                margin-bottom: 12px;
+                border: 1.5px solid #000000;
+                padding: 8px 10px;
+                page-break-inside: avoid;
+                background: #ffffff;
+            }
+            .print-meta-grid {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 8px !important;
+                font-size: 8pt !important;
+            }
+            .bank-card {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 0 12px !important;
+            }
+            .card-title {
+                color: #000000 !important;
+                border-bottom: 1.5px solid #000000 !important;
+                margin-bottom: 6px !important;
+                font-size: 9.5pt !important;
+            }
+            .bank-table {
+                width: 100% !important;
+                border: 1.5px solid #000000 !important;
+                border-collapse: collapse !important;
+            }
+            .bank-table th {
+                background: #EAEAEA !important;
+                color: #000000 !important;
+                border: 1px solid #000000 !important;
+                font-size: 8pt !important;
+                padding: 4px 6px !important;
+            }
+            .bank-table td {
+                border: 1px solid #555555 !important;
+                color: #000000 !important;
+                font-size: 8pt !important;
+                padding: 3px 6px !important;
+            }
+            .print-signatures-block {
+                display: flex !important;
+                justify-content: space-between;
+                margin-top: 30px;
+                padding-top: 10px;
+                page-break-inside: avoid;
+            }
+            .print-sig-col {
+                text-align: center;
+                width: 28%;
+            }
+            .print-sig-line {
+                border-top: 1px solid #000000;
+                margin-bottom: 6px;
+            }
+            .print-sig-title {
+                font-weight: 700;
+                font-size: 8pt;
+            }
+            .print-sig-sub {
+                font-size: 7pt;
+                color: #555555;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- Print Only Header -->
+    <div class="print-only-header">
+        <h2>CO-OPERATIVE BANKING LOAN REPAYMENT SCHEDULE</h2>
+        <p>Daily Based Reducing Balance Repayment Plan vs. Monthly EMI Amortization Schedule</p>
+    </div>
+
+    <!-- Print Loan Metadata Block -->
+    <div class="print-loan-meta">
+        <div class="print-meta-grid">
+            <div><strong>Borrower Name:</strong> <span id="pm-borrower">General Schedule</span></div>
+            <div><strong>Sanction Principal:</strong> <span id="pm-principal">₹ 0</span></div>
+            <div><strong>Daily Payment:</strong> <span id="pm-daily">₹ 0 / day</span></div>
+            <div><strong>Interest Rate:</strong> <span id="pm-rate">0% p.a.</span></div>
+            <div><strong>Tenure Scheduled:</strong> <span id="pm-tenure">0 Months</span></div>
+            <div><strong>Loan Closes In:</strong> <span id="pm-closes">0 Months</span></div>
+            <div><strong>Total Interest Paid:</strong> <span id="pm-interest">₹ 0</span></div>
+            <div><strong>Total Outflow:</strong> <span id="pm-total">₹ 0</span></div>
+            <div><strong>Standard Monthly EMI:</strong> <span id="pm-emi">₹ 0 / month</span></div>
+            <div><strong>Total Interest Saved:</strong> <span id="pm-saved">₹ 0</span></div>
+            <div><strong>Commencement:</strong> <span id="pm-start">Today</span></div>
+            <div><strong>Report Date:</strong> <span id="pm-date">Today</span></div>
+        </div>
+    </div>
+
+    <!-- SECTION 1: REDESIGNED SPACIOUS LOAN PARAMETERS & REPAYMENT SUMMARY -->
+    <div class="hero-layout-grid input-section">
+
+        <!-- Left: Unified Loan Parameters Card (Single Card, Space-Saving) -->
+        <div class="bank-card" style="padding: 16px 18px; margin-bottom: 0;">
+            
+            <!-- Card Header: Title + Non-wrapping Reducing Balance Badge + Action Buttons (Strictly in One Line) -->
+            <div class="card-header-flex param-card-header">
+                <div class="card-title-main">
+                    <span>📝 Loan Parameters (Daily Basis)</span>
+                    <span class="badge badge-navy badge-nowrap">Reducing Balance</span>
+                </div>
+
+                <div class="header-actions no-print">
+                    <button type="button" class="btn btn-outline btn-sm header-action-btn" onclick="resetForm()" title="Reset all inputs to defaults">
+                        🔄 Reset
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm header-action-btn" onclick="window.print()" title="Print Loan Statement">
+                        🖨️ Print
+                    </button>
+                </div>
+            </div>
+
+            <!-- PARAM 1: Loan Amount (Principal) -->
+            <div class="param-group">
+                <div class="param-header">
+                    <label class="param-label" for="amount">
+                        <span>Loan Amount (Principal)</span>
+                    </label>
+                    <span id="amountWords" class="param-badge"></span>
+                </div>
+
+                <div class="param-stepper-box">
+                    <button type="button" class="param-stepper-btn" onclick="stepVal('amount', -50000, 10000, 50000000)" title="Decrease loan amount by ₹50,000">−</button>
+                    <span class="param-input-symbol" style="padding: 0 0 0 10px; font-weight: 700; color: var(--text-muted); font-size: 0.95rem;">₹</span>
+                    <input type="text" id="amount" class="param-stepper-input" value="10,00,000" inputmode="numeric" placeholder="e.g. 10,00,000" style="text-align: left; padding-left: 6px; font-weight: 800;">
+                    <button type="button" class="param-stepper-btn" onclick="stepVal('amount', 50000, 10000, 50000000)" title="Increase loan amount by ₹50,000">+</button>
+                </div>
+
+                <div class="param-slider-wrap">
+                    <input type="range" id="amountRange" class="param-slider" min="10000" max="50000000" step="10000" value="1000000">
+                </div>
+            </div>
+
+            <!-- PARAM 2: Daily Payment -->
+            <div class="param-group">
+                <div class="param-header">
+                    <label class="param-label" for="dailyPayment">
+                        <span>Daily Payment</span>
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span id="dailyMonthlyEquiv" class="param-badge"></span>
+                        <button type="button" class="btn-formula-toggle" id="btnToggleDailyFormula" onclick="toggleDailyFormula()" title="View how monthly equivalent is calculated">
+                            ℹ️ View Formula
+                        </button>
+                    </div>
+                </div>
+
+                <div class="param-stepper-box">
+                    <button type="button" class="param-stepper-btn" onclick="stepVal('dailyPayment', -50, 10, 50000)" title="Decrease daily payment by ₹50/day">−</button>
+                    <span class="param-input-symbol" style="padding: 0 0 0 10px; font-weight: 700; color: var(--text-muted); font-size: 0.95rem;">₹</span>
+                    <input type="text" id="dailyPayment" class="param-stepper-input" value="500" inputmode="numeric" placeholder="e.g. 500" style="text-align: left; padding-left: 6px; font-weight: 800;">
+                    <span class="param-input-suffix" style="padding-right: 6px;">/ day</span>
+                    <button type="button" class="param-stepper-btn" onclick="stepVal('dailyPayment', 50, 10, 50000)" title="Increase daily payment by ₹50/day">+</button>
+                </div>
+
+                <!-- Expandable Formula Breakdown Box -->
+                <div id="dailyFormulaBox" class="formula-breakdown-box" style="display: none;">
+                    <div class="formula-box-header">
+                        <span>📐 Monthly Equivalent Calculation</span>
+                        <button type="button" class="formula-box-close" onclick="toggleDailyFormula(false)" title="Close formula breakdown">✕</button>
+                    </div>
+                    <div class="formula-math-line">
+                        <code>Monthly Equivalent = (Daily Payment × 365 Days) ÷ 12 Months</code>
+                    </div>
+                    <div class="formula-step-line" id="formulaStepDynamic">
+                        <!-- Populated by JS -->
+                    </div>
+                    <div class="formula-note">
+                        📌 <strong>Why ₹15,208.33?</strong> A calendar year has 365 days (365 ÷ 12 = 30.4167 days/month). In daily reducing balance loans, committing ₹500 every single day sums to ₹1,82,500 over 365 days, which averages to <strong>₹15,208.33 per month</strong> (rather than a flat 30-day ₹15,000).
+                    </div>
+                </div>
+
+                <div class="param-slider-wrap">
+                    <input type="range" id="dailyRange" class="param-slider" min="50" max="25000" step="10" value="500">
+                </div>
+            </div>
+
+            <!-- PARAM 3: Interest Rate -->
+            <div class="param-group">
+                <div class="param-header">
+                    <label class="param-label" for="rate">
+                        <span>Interest Rate</span>
+                    </label>
+                    <span id="rateMonthlyBadge" class="param-badge"></span>
+                </div>
+
+                <div class="param-stepper-box">
+                    <button type="button" class="param-stepper-btn" onclick="stepVal('rate', -0.25, 0.25, 30, 2)" title="Decrease rate by 0.25%">−</button>
+                    <input type="number" id="rate" class="param-stepper-input" value="9.5" step="0.05" min="0.25" max="30">
+                    <span class="param-input-suffix" style="padding-right: 5px;">% p.a.</span>
+                    <button type="button" class="param-stepper-btn" onclick="stepVal('rate', 0.25, 0.25, 30, 2)" title="Increase rate by 0.25%">+</button>
+                </div>
+
+                <div class="param-slider-wrap">
+                    <input type="range" id="rateRange" class="param-slider" min="0.25" max="30" step="0.05" value="9.5">
+                </div>
+            </div>
+
+            <!-- PARAM 4: Loan Tenure (Positioned Below Interest Rate) -->
+            <div class="param-group">
+                <div class="param-header">
+                    <label class="param-label" for="tenureMonths">
+                        <span>Loan Tenure</span>
+                    </label>
+                    <span id="tenureWords" class="param-badge"></span>
+                </div>
+
+                <div class="param-stepper-box">
+                    <button type="button" class="param-stepper-btn" onclick="stepVal('tenureMonths', -12, 1, 400)" title="Decrease tenure by 1 year (−12m)">−</button>
+                    <input type="number" id="tenureMonths" class="param-stepper-input" value="120" min="1" max="400">
+                    <span class="param-input-suffix" style="padding-right: 5px;">mo</span>
+                    <button type="button" class="param-stepper-btn" onclick="stepVal('tenureMonths', 12, 1, 400)" title="Increase tenure by 1 year (+12m)">+</button>
+                </div>
+
+                <div class="param-slider-wrap">
+                    <input type="range" id="tenureRange" class="param-slider" min="1" max="400" step="1" value="120">
+                </div>
+            </div>
+
+            <!-- PARAM 5: Start Month & Borrower Details Grid -->
+            <div class="grid-2" style="gap: 12px; margin-bottom: 14px;">
+                <!-- Start Month -->
+                <div>
+                    <div class="param-header">
+                        <label class="param-label" for="startMonth">
+                            <span>Start Month</span>
+                        </label>
+                        <button type="button" class="param-chip" style="flex:0 0 auto; padding: 1px 7px; font-size: 0.68rem;" onclick="setStartMonthCurrent()">
+                            Current
+                        </button>
+                    </div>
+                    <input type="month" id="startMonth" class="form-control" style="height: 33px; font-weight: 700;">
+                </div>
+
+                <!-- Borrower Name -->
+                <div>
+                    <div class="param-header">
+                        <label class="param-label" for="borrowerName">
+                            <span>Borrower Name (Optional)</span>
+                        </label>
+                    </div>
+                    <input type="text" id="borrowerName" class="form-control" placeholder="e.g. Ramesh S. Patil" style="height: 33px;">
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-primary" style="width: 100%; padding: 10px 18px; font-size: 0.88rem;" onclick="calculate()">
+                ⚡ Recalculate &amp; Update Repayment Forecast
+            </button>
+        </div>
+
+        <!-- Right: Spacious Redesigned Repayment Summary Card -->
+        <div class="bank-card" style="padding: 16px 18px; margin-bottom: 0;">
+            <div class="card-header-flex">
+                <div class="card-title-main">
+                    <span>📊 Repayment Summary</span>
+                    <span id="badgePayoffStatus" class="badge badge-success badge-nowrap">Daily Plan</span>
+                </div>
+            </div>
+
+            <!-- Dynamic Alert Notice for underpayment / unpaid tenure -->
+            <div id="alertNotice" class="alert-banner alert-warning" style="display: none;">
+                <span id="alertIcon" class="alert-icon">!</span>
+                <div id="alertMessage" style="flex:1;"></div>
+            </div>
+
+            <!-- 4 Modern Stat Cards in 2x2 Grid -->
+            <div class="grid-2" style="margin-bottom: 14px; gap: 12px;">
+                <!-- Card 1: Loan Closes In -->
+                <div class="stat-card-modern stat-card-blue">
+                    <div class="stat-label">⚡ Loan Closes In</div>
+                    <div class="stat-value" id="dispCloseDuration" style="font-size: 1.35rem; color: var(--bank-blue);">—</div>
+                    <div class="stat-sub" id="dispCloseSub">Enter loan details</div>
+                </div>
+
+                <!-- Card 2: Total Interest -->
+                <div class="stat-card-modern stat-card-gold">
+                    <div class="stat-label">💰 Total Interest Paid</div>
+                    <div class="stat-value" id="dispTotalInterest" style="font-size: 1.35rem; color: var(--bank-gold-hover);">—</div>
+                    <div class="stat-sub" id="dispInterestSub">on daily plan</div>
+                </div>
+
+                <!-- Card 3: Total Repayment Outflow -->
+                <div class="stat-card-modern stat-card-violet">
+                    <div class="stat-label">🏦 Total Outflow</div>
+                    <div class="stat-value" id="dispTotalOutflow" style="font-size: 1.35rem; color: var(--bank-navy);">—</div>
+                    <div class="stat-sub" id="dispOutflowSub">Principal + Interest</div>
+                </div>
+
+                <!-- Card 4: Balance After Scheduled Tenure -->
+                <div class="stat-card-modern stat-card-emerald">
+                    <div class="stat-label">🎯 Balance After Tenure</div>
+                    <div class="stat-value" id="dispBalanceAfterTenure" style="font-size: 1.35rem;">—</div>
+                    <div class="stat-sub" id="dispBalanceSub">Enter loan details</div>
+                </div>
+            </div>
+
+            <!-- Visual Payment Breakdown Box -->
+            <div class="breakdown-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--bank-navy);">
+                        🍩 Payment Composition &amp; Cost
+                    </div>
+                    <span class="badge badge-navy badge-nowrap" style="font-size: 0.68rem;">Total Repayment</span>
+                </div>
+
+                <div class="breakdown-donut-row">
+                    <!-- Donut SVG -->
+                    <div class="donut-wrap">
+                        <svg viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f5f9" stroke-width="12"></circle>
+                            <circle id="donutPrin" cx="50" cy="50" r="38" fill="none" stroke="#2563EB" stroke-width="12"
+                                    stroke-dasharray="0 238.76" stroke-dashoffset="0" stroke-linecap="round"></circle>
+                            <circle id="donutInt" cx="50" cy="50" r="38" fill="none" stroke="#D97706" stroke-width="12"
+                                    stroke-dasharray="0 238.76" stroke-dashoffset="0" stroke-linecap="round"></circle>
+                        </svg>
+                        <div class="donut-center-text">
+                            <span class="donut-center-val" id="donutTotalVal">—</span>
+                            <span class="donut-center-lbl">Total</span>
+                        </div>
+                    </div>
+
+                    <!-- Breakdown Cards Column -->
+                    <div class="breakdown-cards-col">
+                        <div class="breakdown-card prin">
+                            <div>
+                                <div style="font-size: 0.68rem; font-weight: 700; color: var(--bank-blue); text-transform: uppercase; letter-spacing: 0.04em;">Principal Repaid</div>
+                                <div style="font-size: 1.05rem; font-weight: 800; color: var(--bank-navy);" id="dispPrinAmount">—</div>
+                            </div>
+                            <span id="dispPrinPct" class="badge badge-info badge-nowrap" style="font-size: 0.78rem;">50%</span>
+                        </div>
+
+                        <div class="breakdown-card int">
+                            <div>
+                                <div style="font-size: 0.68rem; font-weight: 700; color: var(--bank-gold-hover); text-transform: uppercase; letter-spacing: 0.04em;">Interest Charged</div>
+                                <div style="font-size: 1.05rem; font-weight: 800; color: var(--bank-navy);" id="dispIntAmount">—</div>
+                            </div>
+                            <span id="dispIntPct" class="badge badge-gold badge-nowrap" style="font-size: 0.78rem;">50%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Segmented Progress Bar -->
+                <div class="progress-bar-wrap">
+                    <div id="barPrin" class="progress-bar-prin" style="width: 50%;"></div>
+                    <div id="barInt" class="progress-bar-int" style="width: 50%;"></div>
+                </div>
+
+                <!-- Financial Ratios Bottom Strip -->
+                <div class="ratios-strip">
+                    <div>
+                        Borrowing Cost: <strong id="dispCostRatio" style="color: var(--bank-navy);">—</strong>
+                    </div>
+                    <div>
+                        Daily Rate: <strong id="dispDailyOutflow" style="color: var(--bank-navy);">—</strong>
+                    </div>
+                    <div>
+                        Avg. Monthly: <strong id="dispMonthlyOutflow" style="color: var(--bank-blue);">—</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: DAILY PLAN VS. MONTHLY EMI COMPARISON -->
+    <div class="bank-card" style="margin-bottom: 16px; padding: 16px 18px;">
+        <div class="card-header-flex">
+            <div class="card-title-main">
+                <span>⚖️ Daily Payment Plan vs. Regular Monthly EMI</span>
+                <span class="badge badge-navy badge-nowrap">Direct Baseline Comparison</span>
+            </div>
+        </div>
+
+        <div id="comparisonBox">
+            <!-- Dynamic comparison content populated by JS -->
+        </div>
+    </div>
+
+    <!-- SECTION 3: COMPLETE AMORTIZATION SCHEDULE TABLE -->
+    <div class="bank-card" id="schedule-card" style="padding: 16px 18px;">
+        <div class="card-header-flex">
+            <div class="card-title-main">
+                <span>📅 Complete Repayment Schedule</span>
+            </div>
+
+            <div class="header-actions no-print" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <!-- Schedule View Pills -->
+                <div class="pill-switcher" role="tablist" aria-label="Schedule View Switcher">
+                    <button type="button" id="btnSchedYearly" class="pill-btn active" onclick="setScheduleView('yearly')" title="View Repayment Aggregated by Year">
+                        📅 Yearly View
+                    </button>
+                    <button type="button" id="btnSchedMonthly" class="pill-btn" onclick="setScheduleView('monthly')" title="View Detailed Month-by-Month Schedule">
+                        📆 All Months
+                    </button>
+                </div>
+
+                <input type="text" id="scheduleSearch" class="form-control" placeholder="Search month or year..."
+                       style="width: 170px; padding: 4px 10px; font-size: 0.775rem; display: none;" oninput="renderScheduleTable()">
+
+                <button type="button" class="btn btn-outline btn-sm" onclick="exportScheduleCSV()" title="Export Schedule as CSV">
+                    📥 Export CSV
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="window.print()" title="Print Full Statement">
+                    🖨️ Print Statement
+                </button>
+            </div>
+        </div>
+
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px;">
+            Monthly Interest = Opening Balance × (Annual Rate ÷ 12) · Monthly Payment = Daily Payment × Exact Days in Month
+        </div>
+
+        <div class="table-container" style="max-height: 440px; overflow-y: auto;">
+            <table class="bank-table" id="scheduleTable">
+                <!-- Dynamically populated -->
+            </table>
+        </div>
+
+        <!-- Official Bank Verification & Signature Block (for print) -->
+        <div class="print-signatures-block">
+            <div class="print-sig-col">
+                <div class="print-sig-line"></div>
+                <div class="print-sig-title">Prepared By</div>
+                <div class="print-sig-sub">Loan Officer / Clerk</div>
+            </div>
+            <div class="print-sig-col">
+                <div class="print-sig-line"></div>
+                <div class="print-sig-title">Checked & Verified By</div>
+                <div class="print-sig-sub">Accountant / Auditor</div>
+            </div>
+            <div class="print-sig-col">
+                <div class="print-sig-line"></div>
+                <div class="print-sig-title">Sanctioned By</div>
+                <div class="print-sig-sub">Branch Manager</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    /**
+     * =========================================================================
+     * EMI CALCULATOR DAILY — CONTROLLER & VIEW LOGIC
+     * Built on BankingCore and BankingEmiDailyEngine
+     * =========================================================================
+     */
+
+    let currentResult = null;
+    let scheduleViewMode = 'yearly';  // 'yearly' | 'monthly'
+
+    const $ = id => document.getElementById(id);
+
+    // Helpers using BankingCore
+    const fmtINR = (val, dec = 0) => BankingCore.formatINR(val, { decimals: dec });
+    const fmtWords = val => BankingCore.numberToWords(val, { prefix: '', suffix: '' });
+    const parseAmt = val => BankingCore.parseAmount(val);
+
+    const monthStr = date => {
+        if (!date) return '-';
+        return date.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+    };
+
+    const shortINR = val => {
+        const v = Math.abs(val || 0);
+        if (v >= 1e7) return "₹" + (val / 1e7).toFixed(2) + " Cr";
+        if (v >= 1e5) return "₹" + (val / 1e5).toFixed(2) + " L";
+        if (v >= 1e3) return "₹" + Math.round(val / 1e3) + "K";
+        return "₹" + Math.round(val);
+    };
+
+    /**
+     * Set default Start Month to current month YYYY-MM
+     */
+    function setStartMonthCurrent() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const el = $('startMonth');
+        if (el) el.value = `${y}-${m}`;
+        calculate('startMonth');
+    }
+
+    /**
+     * Micro-stepper buttons handler
+     */
+    function stepVal(id, delta, min, max, dec = 0) {
+        const el = $(id);
+        if (!el) return;
+        let v = parseAmt(el.value);
+        let next = v + delta;
+        if (min !== undefined) next = Math.max(min, next);
+        if (max !== undefined) next = Math.min(max, next);
+        if (id === 'amount' || id === 'dailyPayment') {
+            el.value = Math.round(next).toLocaleString('en-IN');
+        } else {
+            el.value = dec > 0 ? next.toFixed(dec).replace(/\.?0+$/, '') : String(Math.round(next));
+        }
+        calculate(id);
+    }
+
+    /**
+     * Synchronize slider track filled gradient
+     */
+    function updateSliderTrack(sliderId, value) {
+        const el = $(sliderId);
+        if (!el) return;
+        const min = parseFloat(el.min) || 0;
+        const max = parseFloat(el.max) || 100;
+        const val = parseFloat(value) || 0;
+        const pct = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+        el.style.background = `linear-gradient(90deg, var(--bank-blue, #2563EB) ${pct}%, #E2E8F0 ${pct}%)`;
+    }
+
+    /**
+     * Toggle & Update Formula Breakdown
+     */
+    function toggleDailyFormula(forceState) {
+        const box = $('dailyFormulaBox');
+        if (!box) return;
+        const isHidden = box.style.display === 'none';
+        const show = forceState !== undefined ? forceState : isHidden;
+        box.style.display = show ? 'block' : 'none';
+        if (show) updateFormulaBreakdown();
+    }
+
+    function updateFormulaBreakdown() {
+        const stepEl = $('formulaStepDynamic');
+        if (!stepEl) return;
+        const D = parseAmt($('dailyPayment').value) || 0;
+        const annual = D * 365;
+        const monthly = (D * 365) / 12;
+        stepEl.innerHTML = `
+            <div><strong>Step 1 (Annual Outflow):</strong> ${fmtINR(D)} / day × 365 days = <strong>${fmtINR(annual)}</strong></div>
+            <div><strong>Step 2 (Monthly Average):</strong> ${fmtINR(annual)} ÷ 12 months = <strong style="color:var(--bank-blue);">${fmtINR(monthly, 2)}</strong></div>
+        `;
+    }
+
+    /**
+     * Main Calculation Orchestrator
+     */
+    function calculate(sourceId) {
+        const P = parseAmt($('amount').value);
+        const N = parseInt($('tenureMonths').value, 10) || 0;
+        const D = parseAmt($('dailyPayment').value);
+        const R = parseFloat($('rate').value) || 0;
+        const startVal = $('startMonth').value;
+
+        // Synchronize range sliders
+        if (sourceId !== 'amountRange') $('amountRange').value = P || 0;
+        if (sourceId !== 'tenureRange') $('tenureRange').value = N || 0;
+        if (sourceId !== 'dailyRange') $('dailyRange').value = D || 0;
+        if (sourceId !== 'rateRange') $('rateRange').value = R || 0;
+
+        // Update slider track fill visual gradients
+        updateSliderTrack('amountRange', P);
+        updateSliderTrack('dailyRange', D);
+        updateSliderTrack('rateRange', R);
+        updateSliderTrack('tenureRange', N);
+
+        // Update live input badges
+        $('amountWords').innerText = P > 0 ? fmtWords(P) : '';
+        $('tenureWords').innerText = N > 0 ? BankingEmiDailyEngine.formatDuration(N) : '';
+        const monthlyEq = (D * 365) / 12;
+        $('dailyMonthlyEquiv').innerText = D > 0 ? `≈ ${fmtINR(monthlyEq, 2)}/mo` : '';
+        $('rateMonthlyBadge').innerText = R > 0 ? `${(R / 12).toFixed(2)}%/mo` : '';
+
+        // Update live formula breakdown if open
+        if ($('dailyFormulaBox') && $('dailyFormulaBox').style.display !== 'none') {
+            updateFormulaBreakdown();
+        }
+
+        // Execute engine calculation
+        const result = BankingEmiDailyEngine.calculate({
+            principal: P,
+            tenureMonths: N,
+            dailyPayment: D,
+            annualRate: R,
+            startDate: startVal
+        });
+
+        if (!result.ok) {
+            renderEmptyState(result.error);
+            return;
+        }
+
+        currentResult = result;
+
+        // 1. Update Stat Cards
+        updateStatCards(result);
+
+        // 2. Update Alert Notice
+        updateAlertNotice(result);
+
+        // 3. Update Visual Breakdown & Donut
+        updateBreakdownBox(result);
+
+        // 4. Update Comparison Table
+        renderComparisonSection(result);
+
+        // 5. Update Repayment Schedule Table
+        renderScheduleTable();
+
+        // 6. Update Printable Loan Metadata
+        updatePrintMetadata(result);
+    }
+
+    function renderEmptyState(msg) {
+        currentResult = null;
+        $('dispCloseDuration').innerText = '—';
+        $('dispCloseSub').innerText = msg || 'Enter loan details';
+        $('dispTotalInterest').innerText = '—';
+        $('dispInterestSub').innerText = 'on daily plan';
+        $('dispTotalOutflow').innerText = '—';
+        $('dispOutflowSub').innerText = 'Principal + Interest';
+        $('dispBalanceAfterTenure').innerText = '—';
+        $('dispBalanceSub').innerText = 'Enter loan details';
+        $('alertNotice').style.display = 'none';
+
+        $('donutTotalVal').innerText = '—';
+        $('dispPrinAmount').innerText = '—';
+        $('dispIntAmount').innerText = '—';
+        $('dispPrinPct').innerText = '50%';
+        $('dispIntPct').innerText = '50%';
+        $('barPrin').style.width = '50%';
+        $('barInt').style.width = '50%';
+        $('dispCostRatio').innerText = '—';
+        if ($('dispDailyOutflow')) $('dispDailyOutflow').innerText = '—';
+        $('dispMonthlyOutflow').innerText = '—';
+
+        $('comparisonBox').innerHTML = `<div style="text-align:center; padding: 20px; color: var(--text-muted); font-size: 0.85rem;">Enter loan parameters to view baseline comparison.</div>`;
+        $('scheduleTable').innerHTML = `<tbody><tr><td colspan="6" style="text-align:center; padding: 24px; color: var(--text-muted);">Enter loan parameters to generate repayment schedule.</td></tr></tbody>`;
+    }
+
+    function updateStatCards(res) {
+        if (res.closeM) {
+            $('dispCloseDuration').innerText = BankingEmiDailyEngine.formatDuration(res.closeM);
+            const endDate = res.rows[res.closeM - 1] ? res.rows[res.closeM - 1].date : null;
+            // Clean middle dot separator used
+            $('dispCloseSub').innerText = `${res.closeM} Months · Ends ${monthStr(endDate)}`;
+            $('badgePayoffStatus').className = 'badge badge-success badge-nowrap';
+            $('badgePayoffStatus').innerText = `⚡ Paid in ${res.closeM}m`;
+        } else {
+            $('dispCloseDuration').innerText = 'Not Closed';
+            $('dispCloseSub').innerText = `Unpaid after ${res.N} Months`;
+            $('badgePayoffStatus').className = 'badge badge-warning badge-nowrap';
+            $('badgePayoffStatus').innerText = '⚠ Balance Remaining';
+        }
+
+        $('dispTotalInterest').innerText = fmtINR(res.totInt);
+        $('dispInterestSub').innerText = (res.diff >= 0 && res.closeM)
+            ? `Saves ${fmtINR(res.diff)} vs Monthly EMI`
+            : `at ${fmtINR(res.D)}/day`;
+
+        $('dispTotalOutflow').innerText = fmtINR(res.totPaid);
+        $('dispOutflowSub').innerText = `Principal + Interest`;
+
+        $('dispBalanceAfterTenure').innerText = fmtINR(res.balAfterN);
+        $('dispBalanceSub').innerText = res.balAfterN > 0
+            ? `Unpaid at Month ${res.N}`
+            : `₹0 left after tenure`;
+    }
+
+    function updateAlertNotice(res) {
+        const box = $('alertNotice');
+        const icon = $('alertIcon');
+        const msg = $('alertMessage');
+
+        if (res.isUnderpaying) {
+            box.style.display = 'flex';
+            box.className = 'alert-banner alert-danger';
+            icon.innerText = '!';
+            msg.innerHTML = `<strong>Daily payment is lower than monthly interest:</strong> Month 1 interest is <strong>${fmtINR(res.m1Interest)}</strong>, but ${fmtINR(res.D)}/day collects only <strong>${fmtINR(res.m1Payment)}</strong>. Please increase the daily payment.`;
+        } else if (!res.closeM || res.balAfterN > 0) {
+            box.style.display = 'flex';
+            box.className = 'alert-banner alert-warning';
+            icon.innerText = '⚠';
+            msg.innerHTML = `<strong>Loan does not clear in ${res.N} Months:</strong> A balance of <strong>${fmtINR(res.balAfterN)}</strong> remains unpaid at the end of ${BankingEmiDailyEngine.formatDuration(res.N)}. Increase the daily payment to close on schedule.`;
+        } else {
+            box.style.display = 'none';
+        }
+    }
+
+    function updateBreakdownBox(res) {
+        const prinPaid = Math.max(0, res.totPaid - res.totInt);
+        const prinPct = res.totPaid > 0 ? (prinPaid / res.totPaid) * 100 : 50;
+        const intPct = 100 - prinPct;
+
+        const circumference = 238.76;
+        const pLen = (prinPct / 100) * circumference;
+        const iLen = (intPct / 100) * circumference;
+
+        $('donutPrin').style.strokeDasharray = `${pLen} ${circumference}`;
+        $('donutPrin').style.strokeDashoffset = '0';
+        $('donutInt').style.strokeDasharray = `${iLen} ${circumference}`;
+        $('donutInt').style.strokeDashoffset = `${-pLen}`;
+
+        $('donutTotalVal').innerText = shortINR(res.totPaid);
+        $('dispPrinAmount').innerText = fmtINR(prinPaid);
+        $('dispIntAmount').innerText = fmtINR(res.totInt);
+        $('dispPrinPct').innerText = `${prinPct.toFixed(1)}%`;
+        $('dispIntPct').innerText = `${intPct.toFixed(1)}%`;
+
+        $('barPrin').style.width = `${prinPct}%`;
+        $('barInt').style.width = `${intPct}%`;
+
+        const costRatio = res.P > 0 ? (res.totInt / res.P).toFixed(2) : '0.00';
+        $('dispCostRatio').innerText = `₹${costRatio} per ₹1 borrowed`;
+        if ($('dispDailyOutflow')) $('dispDailyOutflow').innerText = `${fmtINR(res.D)} / day`;
+        $('dispMonthlyOutflow').innerText = `≈ ${fmtINR(res.D * 365 / 12, 2)} / month`;
+    }
+
+    /**
+     * Render Comparison Section
+     */
+    function renderComparisonSection(res) {
+        const box = $('comparisonBox');
+        if (!res || !box) return;
+
+        const emiDailyCost = res.emi * 12 / 365;
+        const yourMonthlyCost = res.D * 365 / 12;
+        const closes = res.closeM;
+        const mDiff = closes ? res.N - closes : null;
+        const saved = res.diff;
+        const totalEmiPaid = res.emi * res.N;
+
+        let verdictBanner, bannerCls;
+        if (!closes) {
+            bannerCls = 'alert-danger';
+            verdictBanner = `At <strong>${fmtINR(res.D)}/day</strong>, your loan does not clear within ${BankingEmiDailyEngine.formatDuration(res.N)} (<strong>${fmtINR(res.balAfterN)}</strong> remains unpaid). A regular monthly EMI of <strong>${fmtINR(res.emi)}/month</strong> would clear the loan on schedule.`;
+        } else if (saved >= 0) {
+            bannerCls = 'alert-success';
+            const timeTxt = mDiff > 0
+                ? `and finish <strong>${BankingEmiDailyEngine.formatDuration(mDiff)} (${mDiff} Months) earlier</strong>`
+                : `and finish on schedule`;
+            verdictBanner = `You <strong>save ${fmtINR(saved)}</strong> in total interest ${timeTxt} compared to a regular monthly EMI.`;
+        } else {
+            bannerCls = 'alert-warning';
+            verdictBanner = `You pay <strong>${fmtINR(-saved)} more</strong> in interest compared to a regular monthly EMI.`;
+        }
+
+        const dayDiff = res.D - emiDailyCost;
+        const moDiff = yourMonthlyCost - res.emi;
+
+        const compRows = [
+            {
+                label: 'Daily Repayment Cost',
+                emi: `${fmtINR(emiDailyCost, 2)} / day`,
+                daily: `${fmtINR(res.D)} / day`,
+                diff: `${dayDiff >= 0 ? '+' : '−'}${fmtINR(Math.abs(dayDiff), 2)} / day`,
+                cls: ''
+            },
+            {
+                label: 'Equivalent Monthly Outflow',
+                emi: `${fmtINR(res.emi)} / month`,
+                daily: `≈ ${fmtINR(yourMonthlyCost, 2)} / month`,
+                diff: `${moDiff >= 0 ? '+' : '−'}${fmtINR(Math.abs(moDiff), 2)} / mo`,
+                cls: ''
+            },
+            {
+                label: 'Loan Closes In',
+                emi: `${BankingEmiDailyEngine.formatDuration(res.N)} (${res.N}m)`,
+                daily: closes ? `${BankingEmiDailyEngine.formatDuration(closes)} (${closes}m)` : `Unpaid (${fmtINR(res.balAfterN)} left)`,
+                diff: closes ? (mDiff > 0 ? `${mDiff}m earlier` : (mDiff === 0 ? 'Same term' : `${-mDiff}m longer`)) : 'Not closed',
+                cls: closes && mDiff > 0 ? 'color: var(--status-success); font-weight:700;' : ''
+            },
+            {
+                label: 'Total Interest Payable',
+                emi: fmtINR(res.emiInt),
+                daily: fmtINR(res.totInt),
+                diff: `${saved >= 0 ? 'Saves ' : 'Extra '}${fmtINR(Math.abs(saved))}`,
+                cls: saved >= 0 ? 'color: var(--status-success); font-weight:700;' : 'color: var(--bank-gold); font-weight:700;'
+            },
+            {
+                label: 'Total Outflow (Principal + Interest)',
+                emi: fmtINR(totalEmiPaid),
+                daily: fmtINR(res.totPaid),
+                diff: `${saved >= 0 ? '−' : '+'}${fmtINR(Math.abs(saved))}`,
+                cls: saved >= 0 ? 'color: var(--status-success); font-weight:700;' : 'color: var(--bank-gold); font-weight:700;'
+            }
+        ];
+
+        box.innerHTML = `
+            <div class="alert-banner ${bannerCls}" style="margin-bottom: 14px;">
+                <span class="alert-icon">${saved >= 0 && closes ? '✓' : '!'}</span>
+                <div>${verdictBanner}</div>
+            </div>
+
+            <div class="table-container">
+                <table class="bank-table">
+                    <thead>
+                        <tr>
+                            <th>Repayment Metric</th>
+                            <th class="num">Standard Monthly EMI</th>
+                            <th class="num">Daily Payment Plan</th>
+                            <th class="num">Financial Advantage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${compRows.map(r => `
+                            <tr>
+                                <td><strong>${r.label}</strong></td>
+                                <td class="num">${r.emi}</td>
+                                <td class="num" style="color: var(--bank-blue); font-weight:700;">${r.daily}</td>
+                                <td class="num" style="${r.cls}">${r.diff}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    /**
+     * Schedule View Switcher
+     */
+    function setScheduleView(mode) {
+        scheduleViewMode = mode;
+        if (mode === 'monthly') {
+            $('btnSchedMonthly').classList.add('active');
+            $('btnSchedYearly').classList.remove('active');
+            $('scheduleSearch').style.display = 'inline-block';
+        } else {
+            $('btnSchedYearly').classList.add('active');
+            $('btnSchedMonthly').classList.remove('active');
+            $('scheduleSearch').style.display = 'none';
+        }
+        renderScheduleTable();
+    }
+
+    /**
+     * Render Repayment Schedule Table
+     */
+    function renderScheduleTable() {
+        const tbl = $('scheduleTable');
+        if (!currentResult || !tbl) return;
+        const res = currentResult;
+        const endMonth = res.closeM || res.N || 400;
+
+        if (scheduleViewMode === 'yearly') {
+            // Yearly View
+            let html = `
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Period</th>
+                        <th class="num">Opening Balance (₹)</th>
+                        <th class="num">Interest Charged (₹)</th>
+                        <th class="num">Payment Made (₹)</th>
+                        <th class="num">Closing Balance (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+
+            res.yearlyRows.forEach(y => {
+                const isPaidOff = y.close === 0;
+                html += `
+                    <tr class="${isPaidOff ? 'row-payoff' : ''}">
+                        <td><strong>Year ${y.year}</strong></td>
+                        <td style="color: var(--text-muted);">${monthStr(y.startDate)} – ${monthStr(y.endDate)}</td>
+                        <td class="num">${fmtINR(y.open)}</td>
+                        <td class="num" style="color: var(--bank-gold-hover);">${fmtINR(y.int)}</td>
+                        <td class="num" style="color: var(--bank-blue); font-weight:600;">${fmtINR(y.pay)}</td>
+                        <td class="num" style="font-weight:700; color: var(--bank-navy);">${fmtINR(y.close)}</td>
+                    </tr>
+                `;
+            });
+
+            // Total row
+            html += `
+                <tr class="row-total">
+                    <td>TOTALS</td>
+                    <td style="color: var(--text-muted);">${res.yearlyRows.length} Years</td>
+                    <td class="num">—</td>
+                    <td class="num">${fmtINR(res.totInt)}</td>
+                    <td class="num">${fmtINR(res.totPaid)}</td>
+                    <td class="num">${fmtINR(res.balAfterN)}</td>
+                </tr>
+            `;
+
+            tbl.innerHTML = html + `</tbody>`;
+            return;
+        }
+
+        // Monthly Detailed View
+        const q = ($('scheduleSearch').value || '').trim().toLowerCase();
+        let html = `
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Month</th>
+                    <th class="num">Days</th>
+                    <th class="num">Opening Balance (₹)</th>
+                    <th class="num">Interest (₹)</th>
+                    <th class="num">Payment (₹)</th>
+                    <th class="num">Closing Balance (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+        `;
+
+        for (let i = 0; i < endMonth; i++) {
+            const r = res.rows[i];
+            const mText = monthStr(r.date);
+            if (q && !String(r.m).includes(q) && !mText.toLowerCase().includes(q)) continue;
+
+            const isPayoff = r.m === res.closeM;
+            const isTenure = r.m === res.N;
+            let rowCls = '';
+            if (isPayoff) rowCls = 'row-payoff';
+            else if (isTenure) rowCls = 'row-tenure';
+
+            html += `
+                <tr class="${rowCls}">
+                    <td><strong>${r.m}</strong></td>
+                    <td>${mText}</td>
+                    <td class="num" style="color: var(--text-muted);">${r.days}</td>
+                    <td class="num">${fmtINR(r.open)}</td>
+                    <td class="num" style="color: var(--bank-gold-hover);">${fmtINR(r.int)}</td>
+                    <td class="num" style="color: var(--bank-blue); font-weight:600;">${fmtINR(r.pay)}</td>
+                    <td class="num" style="font-weight:700; color: var(--bank-navy);">${fmtINR(r.close)}</td>
+                </tr>
+            `;
+        }
+
+        // Total row
+        html += `
+            <tr class="row-total">
+                <td>TOTALS</td>
+                <td>${endMonth} Months</td>
+                <td class="num">—</td>
+                <td class="num">—</td>
+                <td class="num">${fmtINR(res.totInt)}</td>
+                <td class="num">${fmtINR(res.totPaid)}</td>
+                <td class="num">${fmtINR(res.balAfterN)}</td>
+            </tr>
+        `;
+
+        tbl.innerHTML = html + `</tbody>`;
+    }
+
+    /**
+     * CSV Export
+     */
+    function exportScheduleCSV() {
+        if (!currentResult) {
+            BankingCore.toast.warning('Please enter valid loan details first.');
+            return;
+        }
+        const res = currentResult;
+        const endMonth = res.closeM || res.N || 400;
+
+        let csv = 'Month,Date,Days,Opening Balance,Interest Charged,Payment Made,Closing Balance\r\n';
+        for (let i = 0; i < endMonth; i++) {
+            const r = res.rows[i];
+            csv += `${r.m},${monthStr(r.date)},${r.days},${Math.round(r.open)},${Math.round(r.int)},${Math.round(r.pay)},${Math.round(r.close)}\r\n`;
+        }
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Daily_EMI_Amortization_Schedule_${Date.now()}.csv`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        BankingCore.toast.success('CSV Amortization Schedule downloaded.');
+    }
+
+    /**
+     * Update Print Metadata
+     */
+    function updatePrintMetadata(res) {
+        const borrower = ($('borrowerName').value || '').trim() || 'General Schedule';
+        $('pm-borrower').innerText = borrower;
+        $('pm-principal').innerText = fmtINR(res.P);
+        $('pm-daily').innerText = `${fmtINR(res.D)} / day`;
+        $('pm-rate').innerText = `${res.R}% p.a.`;
+        $('pm-tenure').innerText = `${res.N} Months (${BankingEmiDailyEngine.formatDuration(res.N)})`;
+        $('pm-closes').innerText = res.closeM ? `${BankingEmiDailyEngine.formatDuration(res.closeM)} (${res.closeM}m)` : `Unpaid after ${res.N}m`;
+        $('pm-interest').innerText = fmtINR(res.totInt);
+        $('pm-total').innerText = fmtINR(res.totPaid);
+        $('pm-emi').innerText = `${fmtINR(res.emi)} / month`;
+        $('pm-saved').innerText = (res.diff >= 0 ? '+' : '−') + fmtINR(Math.abs(res.diff));
+        $('pm-start').innerText = monthStr(res.startDate);
+        $('pm-date').innerText = new Date().toLocaleDateString('en-IN');
+    }
+
+    /**
+     * Form Reset
+     */
+    function resetForm() {
+        $('borrowerName').value = '';
+        $('amount').value = '10,00,000';
+        $('amountRange').value = '1000000';
+        $('tenureMonths').value = '120';
+        $('tenureRange').value = '120';
+        $('dailyPayment').value = '500';
+        $('dailyRange').value = '500';
+        $('rate').value = '9.5';
+        $('rateRange').value = '9.5';
+        setStartMonthCurrent();
+        BankingCore.toast.info('Calculator reset to default parameters.');
+    }
+
+    // --- EVENT LISTENERS INITIALIZATION ---
+
+        // Currency auto-formatting on typing with smart cursor position preservation
+    const setupCurrencyInput = id => {
+        const el = $(id);
+        if (!el) return;
+        el.addEventListener('input', e => {
+            const val = e.target.value;
+            const cursor = el.selectionStart;
+            const digitsBeforeCursor = (val.slice(0, cursor).match(/\d/g) || []).length;
+
+            const raw = val.replace(/[^\d]/g, '');
+            if (!raw) {
+                el.value = '';
+                calculate(id);
+                return;
+            }
+
+            const formatted = Number(raw).toLocaleString('en-IN');
+            el.value = formatted;
+
+            // Restore cursor position based on digit count
+            let newCursor = 0;
+            let digitsSeen = 0;
+            for (let i = 0; i < formatted.length; i++) {
+                if (/\d/.test(formatted[i])) digitsSeen++;
+                if (digitsSeen === digitsBeforeCursor) {
+                    newCursor = i + 1;
+                    break;
+                }
+            }
+            if (digitsBeforeCursor === 0) newCursor = 0;
+            if (digitsSeen < digitsBeforeCursor) newCursor = formatted.length;
+
+            el.setSelectionRange(newCursor, newCursor);
+            calculate(id);
+        });
+
+        // Ensure clean fallback if user leaves field empty
+        el.addEventListener('blur', () => {
+            if (!el.value.trim()) {
+                if (id === 'amount') el.value = '10,00,000';
+                if (id === 'dailyPayment') el.value = '500';
+                calculate(id);
+            }
+        });
+    };
+    setupCurrencyInput('amount');
+    setupCurrencyInput('dailyPayment');
+
+    // Standard numeric inputs (input + change listeners for immediate responsiveness)
+    ['tenureMonths', 'rate'].forEach(id => {
+        const el = $(id);
+        if (el) {
+            el.addEventListener('input', () => calculate(id));
+            el.addEventListener('change', () => calculate(id));
+        }
+    });
+
+    if ($('startMonth')) {
+        $('startMonth').addEventListener('input', () => calculate('startMonth'));
+        $('startMonth').addEventListener('change', () => calculate('startMonth'));
+    }
+
+    if ($('borrowerName')) {
+        $('borrowerName').addEventListener('input', () => {
+            if (currentResult) updatePrintMetadata(currentResult);
+        });
+    }
+
+    // Sliders
+    if ($('amountRange')) {
+        $('amountRange').addEventListener('input', e => {
+            $('amount').value = Number(e.target.value).toLocaleString('en-IN');
+            calculate('amountRange');
+        });
+    }
+    if ($('tenureRange')) {
+        $('tenureRange').addEventListener('input', e => {
+            $('tenureMonths').value = e.target.value;
+            calculate('tenureRange');
+        });
+    }
+    if ($('dailyRange')) {
+        $('dailyRange').addEventListener('input', e => {
+            $('dailyPayment').value = Number(e.target.value).toLocaleString('en-IN');
+            calculate('dailyRange');
+        });
+    }
+    if ($('rateRange')) {
+        $('rateRange').addEventListener('input', e => {
+            $('rate').value = (+e.target.value).toFixed(2).replace(/\.?0+$/, '');
+            calculate('rateRange');
+        });
+    }
+
+    // Initial load
+    window.addEventListener('DOMContentLoaded', () => {
+        setStartMonthCurrent();
+    });
+</script>
+
+</body>
+</html>

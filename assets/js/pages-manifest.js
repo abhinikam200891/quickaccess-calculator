@@ -69,6 +69,13 @@
         "desc":  "Shareholder dividend distribution"
     },
     {
+        "file":  "emi calculator daily.html",
+        "title":  "EMI Calculator Daily",
+        "name":  "EMI Calculator Daily",
+        "icon":  "⚡",
+        "desc":  "Daily reducing balance repayment vs monthly EMI"
+    },
+    {
         "file":  "emi.html",
         "title":  "EMI Repayment Schedule Calculator",
         "name":  "EMI Calculator",
